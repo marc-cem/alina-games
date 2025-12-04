@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Math by Colour - Alina's Game</title>
+    <title>Math by Colour</title>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * {
@@ -628,6 +628,53 @@
             transform: translateX(-5px);
         }
 
+        /* Navigation buttons */
+        .nav-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .nav-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.95em;
+            font-family: 'Fredoka', sans-serif;
+            font-weight: 500;
+            background: rgba(95, 39, 205, 0.1);
+            color: #5f27cd;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn:hover {
+            background: rgba(95, 39, 205, 0.2);
+            transform: scale(1.05);
+        }
+
+        /* Colour dot on level buttons */
+        .colour-dot {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-left: 4px;
+            vertical-align: middle;
+            border: 2px solid rgba(255,255,255,0.8);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+
+        .colour-dot.locked {
+            background: #ccc;
+            border: 2px dashed #999;
+        }
+
         /* Welcome screen decorations */
         .welcome-star {
             animation: wiggle 3s ease-in-out infinite;
@@ -684,7 +731,7 @@
         <div id="welcome-screen" class="screen active">
             <a href="../index.html" class="home-link">← Back to All Games</a>
             <h1>🎨 Math by Colour</h1>
-            <p class="subtitle">Welcome, Alina! 🌟</p>
+            <p class="subtitle">Let's colour by numbers! 🌟</p>
             <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgdmlld0JveD0iMCAwIDE1MCAxNTAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTc1IDEwbDIwIDQwaDQ1bC0zNSAzMCAxNSA0NS00NS0zMC00NSAzMCAxNS00NS0zNS0zMGg0NXoiIGZpbGw9IiNmZmM1MDciIHN0cm9rZT0iI2ZmYTAwMCIgc3Ryb2tlLXdpZHRoPSIzIi8+PC9zdmc+" alt="Star" class="welcome-star" style="width: 150px; margin: 20px 0;">
             <p style="color: #666; margin-bottom: 30px;">Answer math questions to unlock colours<br>and create beautiful pictures!</p>
             <button class="btn" onclick="showScreen('level-screen')">Let's Play! 🚀</button>
@@ -694,13 +741,20 @@
 
         <!-- Level Select Screen -->
         <div id="level-screen" class="screen">
+            <div class="nav-bar">
+                <button class="nav-btn" onclick="showScreen('welcome-screen')">← Back</button>
+                <a href="../index.html" class="nav-btn">🏠</a>
+            </div>
             <h2>Choose a Level</h2>
             <div class="level-grid" id="level-grid"></div>
-            <button class="btn btn-secondary" onclick="showScreen('welcome-screen')">← Back</button>
         </div>
 
         <!-- Question Screen -->
         <div id="question-screen" class="screen">
+            <div class="nav-bar">
+                <button class="nav-btn" onclick="confirmLeaveLevel()">← Levels</button>
+                <a href="../index.html" class="nav-btn">🏠</a>
+            </div>
             <h2>Level <span id="current-level">1</span></h2>
             <div class="picture-name" id="picture-name">Star</div>
             <div class="question-info">
@@ -730,6 +784,10 @@
 
         <!-- Colouring Screen -->
         <div id="colouring-screen" class="screen">
+            <div class="nav-bar">
+                <button class="nav-btn" onclick="showScreen('level-screen')">← Levels</button>
+                <a href="../index.html" class="nav-btn">🏠</a>
+            </div>
             <h2>Colour Your Picture! 🎨</h2>
             <div class="picture-name" id="colouring-picture-name">Star</div>
             <div class="colouring-area" id="colouring-area"></div>
@@ -740,8 +798,12 @@
 
         <!-- Celebration Screen -->
         <div id="celebration-screen" class="screen">
+            <div class="nav-bar">
+                <span></span>
+                <a href="../index.html" class="nav-btn">🏠</a>
+            </div>
             <div class="celebration">
-                <h2>Amazing Work, Alina! 🎉</h2>
+                <h2>Amazing Work! 🎉</h2>
                 <div class="stars-display" id="stars-display">
                     <span class="star">⭐</span>
                     <span class="star">⭐</span>
@@ -767,7 +829,7 @@
         let currentQuestion = 0;
         let mistakes = 0;
         let correctAnswers = 0;
-        let unlockedColours = [];
+        let sessionUnlockedColour = false; // Did we unlock this level's colour in current session?
         let selectedColour = null;
         let timerInterval = null;
         let timeLeft = 15;
@@ -776,8 +838,16 @@
         let questionResults = [];
         let regionFillCount = {}; // Track how many regions of each number are filled
 
-        // Progress storage
-        let levelProgress = JSON.parse(localStorage.getItem('mathByColour_progress') || '{}');
+        // Progress storage - includes permanent palette
+        let gameProgress = JSON.parse(localStorage.getItem('mathByColour_progress_v2') || '{"levelProgress": {}, "permanentPalette": []}');
+        let levelProgress = gameProgress.levelProgress;
+        let permanentPalette = gameProgress.permanentPalette; // Array of unlocked colour indices (0-14)
+
+        function saveProgress() {
+            gameProgress.levelProgress = levelProgress;
+            gameProgress.permanentPalette = permanentPalette;
+            localStorage.setItem('mathByColour_progress_v2', JSON.stringify(gameProgress));
+        }
 
         // Audio Context for sound effects
         const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -836,276 +906,447 @@
         // Reset game progress
         function confirmReset() {
             if (confirm('Are you sure you want to reset all progress? This cannot be undone!')) {
-                localStorage.removeItem('mathByColour_progress');
+                localStorage.removeItem('mathByColour_progress_v2');
+                localStorage.removeItem('mathByColour_progress'); // Clean up old format
                 levelProgress = {};
+                permanentPalette = [];
+                gameProgress = { levelProgress: {}, permanentPalette: [] };
                 renderLevelGrid();
                 alert('Progress has been reset! 🔄');
             }
         }
 
-        // Pictures Library - Each has appropriate number of colours for complexity
+        // Leave level confirmation
+        function confirmLeaveLevel() {
+            if (confirm('Leave level? Your progress will be lost.')) {
+                if (timerInterval) clearInterval(timerInterval);
+                showScreen('level-screen');
+            }
+        }
+
+        // Master Colour Palette - colours unlock progressively
+        const MASTER_PALETTE = [
+            { name: "Red", hex: "#FF3B30" },
+            { name: "Yellow", hex: "#FFD700" },
+            { name: "Green", hex: "#4CD964" },
+            { name: "Blue", hex: "#4A90D9" },
+            { name: "Orange", hex: "#FF8C00" },
+            { name: "Pink", hex: "#FF69B4" },
+            { name: "Brown", hex: "#8B4513" },
+            { name: "Purple", hex: "#9B59B6" },
+            { name: "Cyan", hex: "#00CED1" },
+            { name: "Tan", hex: "#DEB887" },
+            { name: "Gold", hex: "#DAA520" },
+            { name: "Silver", hex: "#A8A8A8" },
+            { name: "Cream", hex: "#FFF8DC" },
+            { name: "Crimson", hex: "#DC143C" },
+            { name: "Lime", hex: "#32CD32" }
+        ];
+
+        // Pictures Library - Level N uses exactly N colours (regions 1 through N)
         const pictures = [
-            {
-                name: "Star",
-                colours: ["#FFD700"],
-                colourNames: ["Gold"],
-                svg: `<svg viewBox="0 0 200 200">
-                    <path class="svg-region" data-region="1" d="M100 15 L118 75 L182 75 L130 115 L148 175 L100 140 L52 175 L70 115 L18 75 L82 75 Z" fill="white"/>
-                    <text class="region-number" x="92" y="105">1</text>
-                </svg>`
-            },
+            // Level 1: Heart - 1 region (Red)
             {
                 name: "Heart",
-                colours: ["#FF1493"],
-                colourNames: ["Pink"],
                 svg: `<svg viewBox="0 0 200 200">
-                    <path class="svg-region" data-region="1" d="M100 175 C20 115 20 55 60 35 C85 25 100 45 100 45 C100 45 115 25 140 35 C180 55 180 115 100 175" fill="white"/>
-                    <text class="region-number" x="92" y="100">1</text>
+                    <path class="svg-region" data-region="1" d="M100 180 C20 100 20 40 70 30 C90 26 100 45 100 45 C100 45 110 26 130 30 C180 40 180 100 100 180 Z" fill="white"/>
+                    <text class="region-number" x="100" y="100">1</text>
                 </svg>`
             },
-            {
-                name: "Apple",
-                colours: ["#FF3B30", "#4CD964"],
-                colourNames: ["Red", "Green"],
-                svg: `<svg viewBox="0 0 200 200">
-                    <path class="svg-region" data-region="1" d="M100 50 C50 50 30 90 30 130 C30 170 60 185 100 185 C140 185 170 170 170 130 C170 90 150 50 100 50" fill="white"/>
-                    <path class="svg-region" data-region="2" d="M100 50 C100 50 105 25 125 20 C125 20 115 40 100 50" fill="white"/>
-                    <text class="region-number" x="92" y="120">1</text>
-                    <text class="region-number" x="107" y="40">2</text>
-                </svg>`
-            },
-            {
-                name: "Fish",
-                colours: ["#00CED1", "#FF8C00"],
-                colourNames: ["Turquoise", "Orange"],
-                svg: `<svg viewBox="0 0 200 200">
-                    <ellipse class="svg-region" data-region="1" cx="90" cy="100" rx="65" ry="40" fill="white"/>
-                    <path class="svg-region" data-region="2" d="M155 100 L195 65 L195 135 Z" fill="white"/>
-                    <circle cx="45" cy="92" r="6" fill="#333"/>
-                    <text class="region-number" x="82" y="105">1</text>
-                    <text class="region-number" x="168" y="105">2</text>
-                </svg>`
-            },
+            // Level 2: Flower - 2 regions (Red petals, Yellow center)
             {
                 name: "Flower",
-                colours: ["#FF69B4", "#FFD700", "#4CD964"],
-                colourNames: ["Pink", "Yellow", "Green"],
                 svg: `<svg viewBox="0 0 200 200">
-                    <ellipse class="svg-region" data-region="1" cx="100" cy="45" rx="28" ry="25" fill="white"/>
-                    <ellipse class="svg-region" data-region="1" cx="55" cy="80" rx="28" ry="25" transform="rotate(-45 55 80)" fill="white"/>
-                    <ellipse class="svg-region" data-region="1" cx="145" cy="80" rx="28" ry="25" transform="rotate(45 145 80)" fill="white"/>
-                    <ellipse class="svg-region" data-region="1" cx="65" cy="130" rx="28" ry="25" transform="rotate(-20 65 130)" fill="white"/>
-                    <ellipse class="svg-region" data-region="1" cx="135" cy="130" rx="28" ry="25" transform="rotate(20 135 130)" fill="white"/>
-                    <circle class="svg-region" data-region="2" cx="100" cy="95" r="22" fill="white"/>
-                    <path class="svg-region" data-region="3" d="M95 115 L95 185 L105 185 L105 115" fill="white"/>
-                    <text class="region-number" x="92" y="50">1</text>
-                    <text class="region-number" x="92" y="100">2</text>
-                    <text class="region-number" x="92" y="160">3</text>
+                    <circle class="svg-region" data-region="1" cx="100" cy="60" r="30" fill="white"/>
+                    <circle class="svg-region" data-region="1" cx="140" cy="85" r="30" fill="white"/>
+                    <circle class="svg-region" data-region="1" cx="130" cy="135" r="30" fill="white"/>
+                    <circle class="svg-region" data-region="1" cx="70" cy="135" r="30" fill="white"/>
+                    <circle class="svg-region" data-region="1" cx="60" cy="85" r="30" fill="white"/>
+                    <circle class="svg-region" data-region="2" cx="100" cy="100" r="25" fill="white"/>
+                    <text class="region-number" x="100" y="45">1</text>
+                    <text class="region-number" x="150" y="85">1</text>
+                    <text class="region-number" x="140" y="145">1</text>
+                    <text class="region-number" x="60" y="145">1</text>
+                    <text class="region-number" x="50" y="85">1</text>
+                    <text class="region-number" x="100" y="100">2</text>
                 </svg>`
             },
+            // Level 3: Apple - 3 regions (Red body, Yellow highlight, Green leaf)
+            {
+                name: "Apple",
+                svg: `<svg viewBox="0 0 200 200">
+                    <path class="svg-region" data-region="1" d="M100 180 C60 180 30 160 30 110 C30 60 60 40 100 60 C140 40 170 60 170 110 C170 160 140 180 100 180 Z" fill="white"/>
+                    <path class="svg-region" data-region="3" d="M100 60 Q100 20 130 20 Q130 50 100 60" fill="white"/>
+                    <path d="M100 60 Q95 40 90 30" style="fill:none; stroke:#333; stroke-width:4px"/>
+                    <path class="svg-region" data-region="2" d="M130 80 Q145 80 150 100 Q145 120 130 120 Q120 100 130 80 Z" fill="white"/>
+                    <text class="region-number" x="80" y="120">1</text>
+                    <text class="region-number" x="138" y="100">2</text>
+                    <text class="region-number" x="115" y="40">3</text>
+                </svg>`
+            },
+            // Level 4: Fish - 4 regions (Red fins, Yellow stripe, Green seaweed, Blue body)
+            {
+                name: "Fish",
+                svg: `<svg viewBox="0 0 200 200">
+                    <path class="svg-region" data-region="1" d="M160 100 L190 70 L190 130 Z" fill="white"/>
+                    <path class="svg-region" data-region="1" d="M90 60 L110 30 L130 65" fill="white"/>
+                    <path class="svg-region" data-region="1" d="M90 140 L110 170 L130 135" fill="white"/>
+                    <ellipse class="svg-region" data-region="4" cx="100" cy="100" rx="70" ry="45" fill="white"/>
+                    <path class="svg-region" data-region="2" d="M100 55 Q120 100 100 145 Q80 100 100 55 Z" fill="white"/>
+                    <path class="svg-region" data-region="3" d="M30 190 Q30 150 40 170 T50 190" style="fill:none; stroke:#333; stroke-width:3px"/>
+                    <path class="svg-region" data-region="3" d="M10 190 Q10 140 25 160 T40 190" style="fill:none; stroke:#333; stroke-width:3px"/>
+                    <path class="svg-region" data-region="3" d="M160 190 Q160 160 170 180 T180 190" style="fill:none; stroke:#333; stroke-width:3px"/>
+                    <circle cx="60" cy="90" r="5" fill="#333" stroke="none"/>
+                    <text class="region-number" x="175" y="100">1</text>
+                    <text class="region-number" x="110" y="45">1</text>
+                    <text class="region-number" x="110" y="155">1</text>
+                    <text class="region-number" x="100" y="100">2</text>
+                    <text class="region-number" x="30" y="170">3</text>
+                    <text class="region-number" x="135" y="100">4</text>
+                </svg>`
+            },
+            // Level 5: Butterfly - 5 regions
             {
                 name: "Butterfly",
-                colours: ["#9B59B6", "#E74C3C", "#3498DB"],
-                colourNames: ["Purple", "Red", "Blue"],
                 svg: `<svg viewBox="0 0 200 200">
-                    <ellipse class="svg-region" data-region="1" cx="55" cy="70" rx="40" ry="35" fill="white"/>
-                    <ellipse class="svg-region" data-region="1" cx="145" cy="70" rx="40" ry="35" fill="white"/>
-                    <ellipse class="svg-region" data-region="2" cx="50" cy="130" rx="32" ry="28" fill="white"/>
-                    <ellipse class="svg-region" data-region="2" cx="150" cy="130" rx="32" ry="28" fill="white"/>
-                    <ellipse class="svg-region" data-region="3" cx="100" cy="100" rx="10" ry="45" fill="white"/>
-                    <circle cx="100" cy="50" r="8" fill="#333"/>
-                    <path d="M95 45 Q80 25 75 18" stroke="#333" stroke-width="2" fill="none"/>
-                    <path d="M105 45 Q120 25 125 18" stroke="#333" stroke-width="2" fill="none"/>
-                    <text class="region-number" x="47" y="75">1</text>
-                    <text class="region-number" x="137" y="75">1</text>
-                    <text class="region-number" x="42" y="135">2</text>
-                    <text class="region-number" x="142" y="135">2</text>
-                    <text class="region-number" x="92" y="105">3</text>
+                    <path class="svg-region" data-region="5" d="M90 80 C40 30 10 50 20 100 C50 110 90 100 90 100" fill="white"/>
+                    <path class="svg-region" data-region="5" d="M110 80 C160 30 190 50 180 100 C150 110 110 100 110 100" fill="white"/>
+                    <path class="svg-region" data-region="4" d="M92 105 C50 160 30 150 40 120 C45 110 90 100 92 105" fill="white"/>
+                    <path class="svg-region" data-region="4" d="M108 105 C150 160 170 150 160 120 C155 110 110 100 108 105" fill="white"/>
+                    <ellipse class="svg-region" data-region="2" cx="100" cy="100" rx="10" ry="50" fill="white"/>
+                    <circle class="svg-region" data-region="1" cx="50" cy="70" r="10" fill="white"/>
+                    <circle class="svg-region" data-region="1" cx="150" cy="70" r="10" fill="white"/>
+                    <path class="svg-region" data-region="3" d="M100 160 Q130 160 130 180 Q100 200 70 180 Q70 160 100 160" fill="white"/>
+                    <path d="M95 55 L80 30" style="fill:none; stroke:#333; stroke-width:2px"/>
+                    <path d="M105 55 L120 30" style="fill:none; stroke:#333; stroke-width:2px"/>
+                    <text class="region-number" x="50" y="70">1</text>
+                    <text class="region-number" x="150" y="70">1</text>
+                    <text class="region-number" x="100" y="100">2</text>
+                    <text class="region-number" x="100" y="180">3</text>
+                    <text class="region-number" x="60" y="125">4</text>
+                    <text class="region-number" x="140" y="125">4</text>
+                    <text class="region-number" x="50" y="45">5</text>
+                    <text class="region-number" x="150" y="45">5</text>
                 </svg>`
             },
+            // Level 6: Tulip in Pot - 6 regions
+            {
+                name: "Tulip",
+                svg: `<svg viewBox="0 0 200 200">
+                    <rect class="svg-region" data-region="3" x="95" y="90" width="10" height="50" fill="white"/>
+                    <path class="svg-region" data-region="3" d="M100 130 Q140 100 140 80 Q120 120 105 130" fill="white"/>
+                    <path class="svg-region" data-region="5" d="M60 140 L50 180 L150 180 L140 140 Z" fill="white"/>
+                    <rect class="svg-region" data-region="4" x="55" y="125" width="90" height="15" rx="3" fill="white"/>
+                    <path class="svg-region" data-region="1" d="M100 95 C60 95 60 40 100 40 C140 40 140 95 100 95 Z" fill="white"/>
+                    <ellipse class="svg-region" data-region="2" cx="100" cy="65" rx="15" ry="25" fill="white"/>
+                    <path class="svg-region" data-region="6" d="M100 150 L80 140 L80 160 Z" fill="white"/>
+                    <path class="svg-region" data-region="6" d="M100 150 L120 140 L120 160 Z" fill="white"/>
+                    <circle class="svg-region" data-region="6" cx="100" cy="150" r="5" fill="white"/>
+                    <text class="region-number" x="80" y="70">1</text>
+                    <text class="region-number" x="120" y="70">1</text>
+                    <text class="region-number" x="100" y="65">2</text>
+                    <text class="region-number" x="92" y="115">3</text>
+                    <text class="region-number" x="130" y="100">3</text>
+                    <text class="region-number" x="100" y="133">4</text>
+                    <text class="region-number" x="100" y="165">5</text>
+                    <text class="region-number" x="125" y="150">6</text>
+                </svg>`
+            },
+            // Level 7: House - 7 regions
             {
                 name: "House",
-                colours: ["#E74C3C", "#F5CBA7", "#8B4513", "#87CEEB"],
-                colourNames: ["Red", "Cream", "Brown", "Blue"],
                 svg: `<svg viewBox="0 0 200 200">
-                    <path class="svg-region" data-region="1" d="M25 95 L100 30 L175 95 Z" fill="white"/>
-                    <rect class="svg-region" data-region="2" x="45" y="95" width="110" height="85" fill="white"/>
-                    <rect class="svg-region" data-region="3" x="82" y="125" width="36" height="55" fill="white"/>
-                    <rect class="svg-region" data-region="4" x="55" y="105" width="22" height="22" fill="white"/>
-                    <rect class="svg-region" data-region="4" x="123" y="105" width="22" height="22" fill="white"/>
-                    <text class="region-number" x="92" y="75">1</text>
-                    <text class="region-number" x="60" y="170">2</text>
-                    <text class="region-number" x="92" y="155">3</text>
-                    <text class="region-number" x="60" y="120">4</text>
-                    <text class="region-number" x="128" y="120">4</text>
+                    <rect class="svg-region" data-region="4" x="10" y="10" width="180" height="80" fill="white"/>
+                    <rect class="svg-region" data-region="5" x="140" y="40" width="20" height="40" fill="white"/>
+                    <path class="svg-region" data-region="7" d="M20 90 L100 30 L180 90 Z" fill="white"/>
+                    <rect x="30" y="90" width="140" height="80" fill="none" stroke="#333" stroke-width="2"/>
+                    <rect class="svg-region" data-region="1" x="85" y="120" width="30" height="50" fill="white"/>
+                    <rect class="svg-region" data-region="2" x="45" y="110" width="25" height="25" fill="white"/>
+                    <rect class="svg-region" data-region="2" x="130" y="110" width="25" height="25" fill="white"/>
+                    <rect class="svg-region" data-region="3" x="10" y="170" width="180" height="20" fill="white"/>
+                    <circle class="svg-region" data-region="6" cx="40" cy="160" r="8" fill="white"/>
+                    <circle class="svg-region" data-region="6" cx="160" cy="160" r="8" fill="white"/>
+                    <text class="region-number" x="100" y="145">1</text>
+                    <text class="region-number" x="58" y="123">2</text>
+                    <text class="region-number" x="143" y="123">2</text>
+                    <text class="region-number" x="100" y="180">3</text>
+                    <text class="region-number" x="30" y="30">4</text>
+                    <text class="region-number" x="150" y="50">5</text>
+                    <text class="region-number" x="40" y="160">6</text>
+                    <text class="region-number" x="160" y="160">6</text>
+                    <text class="region-number" x="100" y="65">7</text>
                 </svg>`
             },
+            // Level 8: Cat - 8 regions
             {
                 name: "Cat",
-                colours: ["#FF8C00", "#FFE4B5", "#FF69B4", "#333333"],
-                colourNames: ["Orange", "Cream", "Pink", "Black"],
                 svg: `<svg viewBox="0 0 200 200">
-                    <ellipse class="svg-region" data-region="1" cx="100" cy="125" rx="55" ry="45" fill="white"/>
-                    <circle class="svg-region" data-region="2" cx="100" cy="70" r="38" fill="white"/>
-                    <path class="svg-region" data-region="1" d="M62 42 L52 10 L82 38 Z" fill="white"/>
-                    <path class="svg-region" data-region="1" d="M138 42 L148 10 L118 38 Z" fill="white"/>
-                    <ellipse class="svg-region" data-region="3" cx="100" cy="80" rx="8" ry="5" fill="white"/>
-                    <path class="svg-region" data-region="4" d="M145 140 Q175 145 170 175 Q150 172 145 140" fill="white"/>
-                    <circle cx="82" cy="62" r="5" fill="#333"/>
-                    <circle cx="118" cy="62" r="5" fill="#333"/>
-                    <text class="region-number" x="55" y="140">1</text>
-                    <text class="region-number" x="92" y="65">2</text>
-                    <text class="region-number" x="92" y="83">3</text>
-                    <text class="region-number" x="152" y="162">4</text>
+                    <path class="svg-region" data-region="7" d="M140 145 Q180 145 180 100 Q180 70 150 70 L150 90 Q160 90 160 100 Q160 125 140 125 Z" fill="white"/>
+                    <path class="svg-region" data-region="5" d="M60 170 L60 120 Q60 80 100 80 Q140 80 140 120 L140 170 Z" fill="white"/>
+                    <circle class="svg-region" data-region="5" cx="100" cy="70" r="35" fill="white"/>
+                    <path class="svg-region" data-region="5" d="M70 50 L60 20 L90 40" fill="white"/>
+                    <path class="svg-region" data-region="5" d="M130 50 L140 20 L110 40" fill="white"/>
+                    <ellipse class="svg-region" data-region="2" cx="85" cy="65" rx="5" ry="7" fill="white"/>
+                    <ellipse class="svg-region" data-region="2" cx="115" cy="65" rx="5" ry="7" fill="white"/>
+                    <path class="svg-region" data-region="6" d="M95 75 L105 75 L100 82 Z" fill="white"/>
+                    <rect class="svg-region" data-region="4" x="80" y="100" width="40" height="10" rx="2" fill="white"/>
+                    <circle class="svg-region" data-region="1" cx="100" cy="115" r="6" fill="white"/>
+                    <path class="svg-region" data-region="8" d="M120 25 L130 15 L130 35 Z" fill="white"/>
+                    <path class="svg-region" data-region="8" d="M120 25 L110 15 L110 35 Z" fill="white"/>
+                    <circle class="svg-region" data-region="8" cx="120" cy="25" r="3" fill="white"/>
+                    <rect class="svg-region" data-region="3" x="20" y="170" width="160" height="15" fill="white"/>
+                    <text class="region-number" x="100" y="115" style="font-size:10px">1</text>
+                    <text class="region-number" x="85" y="55" style="font-size:10px">2</text>
+                    <text class="region-number" x="115" y="55" style="font-size:10px">2</text>
+                    <text class="region-number" x="100" y="178">3</text>
+                    <text class="region-number" x="115" y="105" style="font-size:10px">4</text>
+                    <text class="region-number" x="100" y="145">5</text>
+                    <text class="region-number" x="70" y="30">5</text>
+                    <text class="region-number" x="100" y="85" style="font-size:8px">6</text>
+                    <text class="region-number" x="165" y="100">7</text>
+                    <text class="region-number" x="135" y="25" style="font-size:10px">8</text>
                 </svg>`
             },
+            // Level 9: Rocket - 9 regions
             {
                 name: "Rocket",
-                colours: ["#E74C3C", "#3498DB", "#F39C12", "#ECF0F1"],
-                colourNames: ["Red", "Blue", "Orange", "White"],
                 svg: `<svg viewBox="0 0 200 200">
-                    <path class="svg-region" data-region="1" d="M100 10 L125 70 L125 140 L75 140 L75 70 Z" fill="white"/>
-                    <path class="svg-region" data-region="2" d="M75 110 L45 155 L75 140 Z" fill="white"/>
-                    <path class="svg-region" data-region="2" d="M125 110 L155 155 L125 140 Z" fill="white"/>
-                    <path class="svg-region" data-region="3" d="M85 140 L100 185 L115 140 Z" fill="white"/>
-                    <ellipse class="svg-region" data-region="4" cx="100" cy="85" rx="18" ry="22" fill="white"/>
-                    <text class="region-number" x="92" y="55">1</text>
-                    <text class="region-number" x="52" y="140">2</text>
-                    <text class="region-number" x="132" y="140">2</text>
-                    <text class="region-number" x="92" y="168">3</text>
-                    <text class="region-number" x="92" y="90">4</text>
+                    <rect class="svg-region" data-region="8" x="10" y="10" width="180" height="180" rx="10" fill="white"/>
+                    <path class="svg-region" data-region="4" d="M70 130 L50 160 L70 150 Z" fill="white"/>
+                    <path class="svg-region" data-region="4" d="M130 130 L150 160 L130 150 Z" fill="white"/>
+                    <path class="svg-region" data-region="7" d="M40 170 Q100 160 160 170 L160 180 L40 180 Z" fill="white"/>
+                    <path class="svg-region" data-region="5" d="M90 150 L100 180 L110 150 Z" fill="white"/>
+                    <path class="svg-region" data-region="1" d="M100 30 Q130 80 130 140 L130 150 L70 150 L70 140 Q70 80 100 30 Z" fill="white"/>
+                    <circle class="svg-region" data-region="9" cx="100" cy="80" r="15" fill="white"/>
+                    <rect class="svg-region" data-region="6" x="70" y="110" width="60" height="10" fill="white"/>
+                    <circle class="svg-region" data-region="3" cx="160" cy="40" r="15" fill="white"/>
+                    <path class="svg-region" data-region="2" d="M40 50 L42 45 L47 45 L43 42 L45 37 L40 40 L35 37 L37 42 L33 45 L38 45 Z" fill="white"/>
+                    <path class="svg-region" data-region="2" d="M150 120 L152 115 L157 115 L153 112 L155 107 L150 110 L145 107 L147 112 L143 115 L148 115 Z" fill="white"/>
+                    <text class="region-number" x="100" y="60">1</text>
+                    <text class="region-number" x="30" y="30">2</text>
+                    <text class="region-number" x="160" y="40">3</text>
+                    <text class="region-number" x="60" y="150">4</text>
+                    <text class="region-number" x="140" y="150">4</text>
+                    <text class="region-number" x="100" y="170">5</text>
+                    <text class="region-number" x="100" y="115">6</text>
+                    <text class="region-number" x="130" y="175">7</text>
+                    <text class="region-number" x="30" y="100">8</text>
+                    <text class="region-number" x="100" y="80">9</text>
                 </svg>`
             },
+            // Level 10: Cupcake - 10 regions
             {
                 name: "Cupcake",
-                colours: ["#FF69B4", "#DEB887", "#FF1493", "#87CEEB", "#FFFACD"],
-                colourNames: ["Pink", "Tan", "Magenta", "Blue", "Cream"],
                 svg: `<svg viewBox="0 0 200 200">
-                    <path class="svg-region" data-region="1" d="M50 95 Q50 45 100 35 Q150 45 150 95 Q125 105 100 100 Q75 105 50 95" fill="white"/>
-                    <path class="svg-region" data-region="2" d="M55 100 L72 175 L128 175 L145 100 Q120 110 100 105 Q80 110 55 100" fill="white"/>
-                    <circle class="svg-region" data-region="3" cx="100" cy="30" r="14" fill="white"/>
-                    <circle class="svg-region" data-region="4" cx="72" cy="70" r="10" fill="white"/>
-                    <circle class="svg-region" data-region="5" cx="128" cy="70" r="10" fill="white"/>
-                    <text class="region-number" x="92" y="80">1</text>
-                    <text class="region-number" x="92" y="145">2</text>
-                    <text class="region-number" x="92" y="35">3</text>
-                    <text class="region-number" x="65" y="75">4</text>
-                    <text class="region-number" x="121" y="75">5</text>
+                    <rect class="svg-region" data-region="10" x="10" y="170" width="180" height="20" fill="white"/>
+                    <ellipse class="svg-region" data-region="9" cx="100" cy="170" rx="70" ry="10" fill="white"/>
+                    <path class="svg-region" data-region="7" d="M60 100 L70 160 L130 160 L140 100 Z" fill="white"/>
+                    <path class="svg-region" data-region="2" d="M70 100 L75 160 L90 160 L85 100 Z" fill="white"/>
+                    <path class="svg-region" data-region="8" d="M115 100 L110 160 L125 160 L130 100 Z" fill="white"/>
+                    <path class="svg-region" data-region="6" d="M50 100 Q40 60 100 50 Q160 60 150 100 Q125 115 100 110 Q75 115 50 100" fill="white"/>
+                    <circle class="svg-region" data-region="1" cx="100" cy="40" r="12" fill="white"/>
+                    <path class="svg-region" data-region="3" d="M100 40 Q110 20 120 25" style="fill:none; stroke:#333; stroke-width:2px"/>
+                    <rect class="svg-region" data-region="4" x="70" y="70" width="15" height="5" transform="rotate(20)" fill="white"/>
+                    <circle class="svg-region" data-region="5" cx="130" cy="80" r="5" fill="white"/>
+                    <text class="region-number" x="100" y="40">1</text>
+                    <text class="region-number" x="80" y="130">2</text>
+                    <text class="region-number" x="120" y="20">3</text>
+                    <text class="region-number" x="75" y="65">4</text>
+                    <text class="region-number" x="130" y="72">5</text>
+                    <text class="region-number" x="100" y="80">6</text>
+                    <text class="region-number" x="100" y="135">7</text>
+                    <text class="region-number" x="120" y="130">8</text>
+                    <text class="region-number" x="150" y="170">9</text>
+                    <text class="region-number" x="170" y="180">10</text>
                 </svg>`
             },
+            // Level 11: Crown - 11 regions
             {
-                name: "Unicorn",
-                colours: ["#DDA0DD", "#FFB6C1", "#FFD700", "#E6E6FA", "#98FB98"],
-                colourNames: ["Plum", "Pink", "Gold", "Lavender", "Mint"],
+                name: "Crown",
                 svg: `<svg viewBox="0 0 200 200">
-                    <ellipse class="svg-region" data-region="1" cx="100" cy="130" rx="50" ry="38" fill="white"/>
-                    <ellipse class="svg-region" data-region="2" cx="68" cy="82" rx="32" ry="28" fill="white"/>
-                    <path class="svg-region" data-region="3" d="M55 60 L68 12 L80 60 Z" fill="white"/>
-                    <path class="svg-region" data-region="4" d="M88 80 Q100 60 120 72 Q130 82 120 92 Q102 98 88 80" fill="white"/>
-                    <path class="svg-region" data-region="5" d="M142 145 Q175 138 172 168 Q155 178 142 155" fill="white"/>
-                    <circle cx="55" cy="75" r="4" fill="#333"/>
-                    <text class="region-number" x="92" y="140">1</text>
-                    <text class="region-number" x="60" y="87">2</text>
-                    <text class="region-number" x="60" y="45">3</text>
-                    <text class="region-number" x="100" y="82">4</text>
-                    <text class="region-number" x="152" y="160">5</text>
+                    <rect class="svg-region" data-region="10" x="10" y="10" width="180" height="180" fill="white"/>
+                    <path class="svg-region" data-region="6" d="M40 150 Q100 120 160 150 L160 170 Q100 140 40 170 Z" fill="white"/>
+                    <rect class="svg-region" data-region="5" x="50" y="120" width="100" height="30" fill="white"/>
+                    <rect class="svg-region" data-region="7" x="50" y="145" width="100" height="5" fill="white"/>
+                    <path class="svg-region" data-region="11" d="M50 120 L50 60 L80 90 L100 40 L120 90 L150 60 L150 120 Z" fill="white"/>
+                    <rect class="svg-region" data-region="2" x="50" y="122" width="100" height="5" fill="white"/>
+                    <path class="svg-region" data-region="8" d="M80 90 L100 70 L120 90 L100 110 Z" fill="white"/>
+                    <circle class="svg-region" data-region="1" cx="100" cy="55" r="8" fill="white"/>
+                    <circle class="svg-region" data-region="3" cx="50" cy="60" r="6" fill="white"/>
+                    <circle class="svg-region" data-region="4" cx="150" cy="60" r="6" fill="white"/>
+                    <circle class="svg-region" data-region="9" cx="100" cy="135" r="8" fill="white"/>
+                    <text class="region-number" x="100" y="55" style="font-size:10px">1</text>
+                    <text class="region-number" x="155" y="125" style="font-size:10px">2</text>
+                    <text class="region-number" x="50" y="60" style="font-size:10px">3</text>
+                    <text class="region-number" x="150" y="60" style="font-size:10px">4</text>
+                    <text class="region-number" x="70" y="135">5</text>
+                    <text class="region-number" x="100" y="160">6</text>
+                    <text class="region-number" x="130" y="147" style="font-size:8px">7</text>
+                    <text class="region-number" x="100" y="90">8</text>
+                    <text class="region-number" x="100" y="135" style="font-size:10px">9</text>
+                    <text class="region-number" x="30" y="30">10</text>
+                    <text class="region-number" x="135" y="80">11</text>
                 </svg>`
             },
+            // Level 12: Robot - 12 regions
             {
                 name: "Robot",
-                colours: ["#708090", "#00CED1", "#FF6347", "#FFD700", "#32CD32", "#C0C0C0"],
-                colourNames: ["Slate", "Cyan", "Red", "Gold", "Lime", "Silver"],
                 svg: `<svg viewBox="0 0 200 200">
-                    <rect class="svg-region" data-region="1" x="60" y="45" width="80" height="55" rx="8" fill="white"/>
-                    <rect class="svg-region" data-region="2" x="50" y="110" width="100" height="65" rx="5" fill="white"/>
-                    <rect class="svg-region" data-region="3" x="72" y="58" width="18" height="18" rx="3" fill="white"/>
-                    <rect class="svg-region" data-region="4" x="110" y="58" width="18" height="18" rx="3" fill="white"/>
-                    <rect class="svg-region" data-region="5" x="85" y="130" width="30" height="25" rx="5" fill="white"/>
-                    <rect class="svg-region" data-region="6" x="30" y="120" width="15" height="40" rx="3" fill="white"/>
-                    <rect class="svg-region" data-region="6" x="155" y="120" width="15" height="40" rx="3" fill="white"/>
-                    <line x1="100" y1="25" x2="100" y2="45" stroke="#333" stroke-width="3"/>
-                    <circle cx="100" cy="20" r="8" fill="#FF6347" stroke="#333" stroke-width="2"/>
-                    <text class="region-number" x="92" y="80">1</text>
-                    <text class="region-number" x="70" y="155">2</text>
-                    <text class="region-number" x="75" y="72">3</text>
-                    <text class="region-number" x="113" y="72">4</text>
-                    <text class="region-number" x="93" y="147">5</text>
-                    <text class="region-number" x="30" y="145">6</text>
-                    <text class="region-number" x="155" y="145">6</text>
+                    <path class="svg-region" data-region="9" d="M30 100 Q10 120 30 140 L40 140 L40 100 Z" fill="white"/>
+                    <path class="svg-region" data-region="9" d="M170 100 Q190 120 170 140 L160 140 L160 100 Z" fill="white"/>
+                    <path class="svg-region" data-region="7" d="M60 170 L140 170 L150 190 L50 190 Z" fill="white"/>
+                    <rect class="svg-region" data-region="12" x="50" y="90" width="100" height="80" rx="5" fill="white"/>
+                    <rect class="svg-region" data-region="12" x="60" y="30" width="80" height="50" rx="5" fill="white"/>
+                    <rect class="svg-region" data-region="10" x="90" y="80" width="20" height="10" fill="white"/>
+                    <line x1="100" y1="30" x2="100" y2="10" stroke="#333" stroke-width="3"/>
+                    <circle class="svg-region" data-region="2" cx="100" cy="10" r="5" fill="white"/>
+                    <circle class="svg-region" data-region="1" cx="80" cy="50" r="8" fill="white"/>
+                    <circle class="svg-region" data-region="3" cx="120" cy="50" r="8" fill="white"/>
+                    <circle class="svg-region" data-region="6" cx="70" cy="65" r="4" fill="white"/>
+                    <circle class="svg-region" data-region="6" cx="130" cy="65" r="4" fill="white"/>
+                    <rect class="svg-region" data-region="8" x="70" y="35" width="60" height="10" fill="white"/>
+                    <rect class="svg-region" data-region="4" x="70" y="100" width="60" height="30" rx="2" fill="white"/>
+                    <circle class="svg-region" data-region="5" cx="80" cy="145" r="5" fill="white"/>
+                    <circle class="svg-region" data-region="5" cx="100" cy="145" r="5" fill="white"/>
+                    <circle class="svg-region" data-region="5" cx="120" cy="145" r="5" fill="white"/>
+                    <path d="M130 110 L140 100 L140 120 Z" fill="white" stroke="#333" stroke-width="2"/>
+                    <circle class="svg-region" data-region="11" cx="130" cy="155" r="8" fill="white"/>
+                    <text class="region-number" x="80" y="50" style="font-size:10px">1</text>
+                    <text class="region-number" x="115" y="10">2</text>
+                    <text class="region-number" x="120" y="50" style="font-size:10px">3</text>
+                    <text class="region-number" x="100" y="115">4</text>
+                    <text class="region-number" x="100" y="145" style="font-size:10px">5</text>
+                    <text class="region-number" x="140" y="65" style="font-size:10px">6</text>
+                    <text class="region-number" x="100" y="180">7</text>
+                    <text class="region-number" x="100" y="40" style="font-size:8px">8</text>
+                    <text class="region-number" x="25" y="120">9</text>
+                    <text class="region-number" x="115" y="85" style="font-size:10px">10</text>
+                    <text class="region-number" x="130" y="155" style="font-size:10px">11</text>
+                    <text class="region-number" x="140" y="130">12</text>
                 </svg>`
             },
+            // Level 13: Owl - 13 regions
             {
                 name: "Owl",
-                colours: ["#8B4513", "#DEB887", "#FFD700", "#FF8C00", "#2F4F4F", "#FAEBD7"],
-                colourNames: ["Brown", "Tan", "Gold", "Orange", "Dark Teal", "Cream"],
                 svg: `<svg viewBox="0 0 200 200">
-                    <ellipse class="svg-region" data-region="1" cx="100" cy="115" rx="52" ry="55" fill="white"/>
-                    <path class="svg-region" data-region="2" d="M48 68 L32 28 L72 58 Z" fill="white"/>
-                    <path class="svg-region" data-region="2" d="M152 68 L168 28 L128 58 Z" fill="white"/>
-                    <circle class="svg-region" data-region="3" cx="75" cy="90" r="20" fill="white"/>
-                    <circle class="svg-region" data-region="3" cx="125" cy="90" r="20" fill="white"/>
-                    <circle class="svg-region" data-region="4" cx="75" cy="90" r="10" fill="white"/>
-                    <circle class="svg-region" data-region="4" cx="125" cy="90" r="10" fill="white"/>
-                    <path class="svg-region" data-region="5" d="M90 115 L100 130 L110 115 Z" fill="white"/>
-                    <ellipse class="svg-region" data-region="6" cx="100" cy="150" rx="25" ry="15" fill="white"/>
-                    <text class="region-number" x="60" y="140">1</text>
-                    <text class="region-number" x="42" y="52">2</text>
-                    <text class="region-number" x="145" y="52">2</text>
-                    <text class="region-number" x="62" y="88">3</text>
-                    <text class="region-number" x="112" y="88">3</text>
-                    <text class="region-number" x="68" y="95">4</text>
-                    <text class="region-number" x="118" y="95">4</text>
-                    <text class="region-number" x="92" y="125">5</text>
-                    <text class="region-number" x="92" y="155">6</text>
+                    <rect class="svg-region" data-region="4" x="10" y="10" width="180" height="40" rx="5" fill="white"/>
+                    <circle class="svg-region" data-region="9" cx="160" cy="30" r="12" fill="white"/>
+                    <circle class="svg-region" data-region="12" cx="30" cy="30" r="8" fill="white"/>
+                    <circle class="svg-region" data-region="12" cx="50" cy="20" r="6" fill="white"/>
+                    <ellipse class="svg-region" data-region="7" cx="100" cy="110" rx="50" ry="60" fill="white"/>
+                    <path class="svg-region" data-region="8" d="M60 70 L50 40 L80 60" fill="white"/>
+                    <path class="svg-region" data-region="8" d="M140 70 L150 40 L120 60" fill="white"/>
+                    <circle class="svg-region" data-region="11" cx="80" cy="90" r="18" fill="white"/>
+                    <circle class="svg-region" data-region="11" cx="120" cy="90" r="18" fill="white"/>
+                    <circle class="svg-region" data-region="2" cx="80" cy="90" r="5" fill="white"/>
+                    <circle class="svg-region" data-region="2" cx="120" cy="90" r="5" fill="white"/>
+                    <path class="svg-region" data-region="5" d="M100 100 L90 115 L110 115 Z" fill="white"/>
+                    <circle class="svg-region" data-region="6" cx="60" cy="110" r="5" fill="white"/>
+                    <circle class="svg-region" data-region="6" cx="140" cy="110" r="5" fill="white"/>
+                    <path class="svg-region" data-region="13" d="M75 130 Q100 160 125 130 Z" fill="white"/>
+                    <ellipse class="svg-region" data-region="10" cx="80" cy="165" rx="8" ry="5" fill="white"/>
+                    <ellipse class="svg-region" data-region="10" cx="120" cy="165" rx="8" ry="5" fill="white"/>
+                    <rect class="svg-region" data-region="3" x="20" y="170" width="160" height="15" rx="5" fill="white"/>
+                    <path class="svg-region" data-region="1" d="M100 170 L90 180 L90 160 Z" fill="white"/>
+                    <path class="svg-region" data-region="1" d="M100 170 L110 180 L110 160 Z" fill="white"/>
+                    <text class="region-number" x="100" y="170" style="font-size:10px">1</text>
+                    <text class="region-number" x="80" y="85" style="font-size:8px">2</text>
+                    <text class="region-number" x="150" y="178">3</text>
+                    <text class="region-number" x="90" y="30">4</text>
+                    <text class="region-number" x="100" y="110" style="font-size:8px">5</text>
+                    <text class="region-number" x="55" y="105" style="font-size:8px">6</text>
+                    <text class="region-number" x="140" y="130">7</text>
+                    <text class="region-number" x="55" y="55">8</text>
+                    <text class="region-number" x="160" y="30" style="font-size:10px">9</text>
+                    <text class="region-number" x="80" y="165" style="font-size:8px">10</text>
+                    <text class="region-number" x="80" y="75" style="font-size:8px">11</text>
+                    <text class="region-number" x="30" y="35" style="font-size:10px">12</text>
+                    <text class="region-number" x="100" y="140" style="font-size:10px">13</text>
                 </svg>`
             },
+            // Level 14: Castle - 14 regions
             {
                 name: "Castle",
-                colours: ["#A0522D", "#708090", "#4169E1", "#FFD700", "#DC143C", "#C0C0C0", "#8B0000"],
-                colourNames: ["Sienna", "Slate", "Blue", "Gold", "Crimson", "Silver", "Dark Red"],
                 svg: `<svg viewBox="0 0 200 200">
-                    <rect class="svg-region" data-region="1" x="45" y="85" width="110" height="95" fill="white"/>
-                    <rect class="svg-region" data-region="2" x="32" y="60" width="28" height="35" fill="white"/>
-                    <rect class="svg-region" data-region="2" x="140" y="60" width="28" height="35" fill="white"/>
-                    <path class="svg-region" data-region="3" d="M82 85 L100 45 L118 85 Z" fill="white"/>
-                    <rect class="svg-region" data-region="4" x="88" y="130" width="24" height="50" rx="12" fill="white"/>
-                    <rect class="svg-region" data-region="5" x="55" y="100" width="18" height="22" fill="white"/>
-                    <rect class="svg-region" data-region="5" x="127" y="100" width="18" height="22" fill="white"/>
-                    <rect class="svg-region" data-region="6" x="32" y="50" width="8" height="12" fill="white"/>
-                    <rect class="svg-region" data-region="6" x="52" y="50" width="8" height="12" fill="white"/>
-                    <rect class="svg-region" data-region="6" x="140" y="50" width="8" height="12" fill="white"/>
-                    <rect class="svg-region" data-region="6" x="160" y="50" width="8" height="12" fill="white"/>
-                    <circle class="svg-region" data-region="7" cx="100" cy="62" r="8" fill="white"/>
-                    <text class="region-number" x="70" y="155">1</text>
-                    <text class="region-number" x="38" y="82">2</text>
-                    <text class="region-number" x="146" y="82">2</text>
-                    <text class="region-number" x="92" y="75">3</text>
-                    <text class="region-number" x="93" y="158">4</text>
-                    <text class="region-number" x="57" y="115">5</text>
-                    <text class="region-number" x="129" y="115">5</text>
-                    <text class="region-number" x="38" y="48">6</text>
-                    <text class="region-number" x="92" y="67">7</text>
+                    <rect class="svg-region" data-region="9" x="10" y="10" width="180" height="40" fill="white"/>
+                    <circle class="svg-region" data-region="2" cx="170" cy="30" r="10" fill="white"/>
+                    <rect class="svg-region" data-region="3" x="10" y="170" width="180" height="20" fill="white"/>
+                    <rect class="svg-region" data-region="10" x="50" y="90" width="100" height="80" fill="white"/>
+                    <rect class="svg-region" data-region="13" x="30" y="70" width="30" height="100" fill="white"/>
+                    <rect class="svg-region" data-region="13" x="140" y="70" width="30" height="100" fill="white"/>
+                    <rect class="svg-region" data-region="7" x="80" y="50" width="40" height="40" fill="white"/>
+                    <path d="M30 70 L45 50 L60 70" fill="white" stroke="#333" stroke-width="2"/>
+                    <path d="M140 70 L155 50 L170 70" fill="white" stroke="#333" stroke-width="2"/>
+                    <path class="svg-region" data-region="1" d="M45 50 L45 30 L60 35 L45 40" fill="white"/>
+                    <path class="svg-region" data-region="14" d="M155 50 L155 30 L170 35 L155 40" fill="white"/>
+                    <path class="svg-region" data-region="12" d="M85 170 L85 130 Q100 110 115 130 L115 170 Z" fill="white"/>
+                    <rect class="svg-region" data-region="4" x="40" y="90" width="10" height="20" fill="white"/>
+                    <rect class="svg-region" data-region="4" x="150" y="90" width="10" height="20" fill="white"/>
+                    <rect class="svg-region" data-region="8" x="60" y="100" width="80" height="15" fill="white"/>
+                    <circle class="svg-region" data-region="5" cx="45" cy="130" r="5" fill="white"/>
+                    <circle class="svg-region" data-region="5" cx="155" cy="130" r="5" fill="white"/>
+                    <circle class="svg-region" data-region="6" cx="30" cy="170" r="5" fill="white"/>
+                    <circle class="svg-region" data-region="6" cx="170" cy="170" r="5" fill="white"/>
+                    <rect class="svg-region" data-region="11" x="30" y="55" width="8" height="12" fill="white"/>
+                    <rect class="svg-region" data-region="11" x="52" y="55" width="8" height="12" fill="white"/>
+                    <rect class="svg-region" data-region="11" x="140" y="55" width="8" height="12" fill="white"/>
+                    <rect class="svg-region" data-region="11" x="162" y="55" width="8" height="12" fill="white"/>
+                    <text class="region-number" x="60" y="30" style="font-size:10px">1</text>
+                    <text class="region-number" x="170" y="30" style="font-size:10px">2</text>
+                    <text class="region-number" x="100" y="180">3</text>
+                    <text class="region-number" x="45" y="100" style="font-size:8px">4</text>
+                    <text class="region-number" x="45" y="130" style="font-size:8px">5</text>
+                    <text class="region-number" x="30" y="165" style="font-size:8px">6</text>
+                    <text class="region-number" x="100" y="70">7</text>
+                    <text class="region-number" x="100" y="108" style="font-size:10px">8</text>
+                    <text class="region-number" x="100" y="30">9</text>
+                    <text class="region-number" x="70" y="150">10</text>
+                    <text class="region-number" x="45" y="60" style="font-size:8px">11</text>
+                    <text class="region-number" x="100" y="150">12</text>
+                    <text class="region-number" x="35" y="140" style="font-size:8px">13</text>
+                    <text class="region-number" x="170" y="40" style="font-size:8px">14</text>
                 </svg>`
             },
+            // Level 15: Dragon - 15 regions
             {
                 name: "Dragon",
-                colours: ["#228B22", "#32CD32", "#FFD700", "#FF4500", "#8FBC8F", "#FF6347", "#9932CC"],
-                colourNames: ["Forest", "Lime", "Gold", "Orange", "Sea Green", "Tomato", "Purple"],
                 svg: `<svg viewBox="0 0 200 200">
-                    <ellipse class="svg-region" data-region="1" cx="95" cy="120" rx="50" ry="40" fill="white"/>
-                    <ellipse class="svg-region" data-region="2" cx="55" cy="75" rx="28" ry="24" fill="white"/>
-                    <path class="svg-region" data-region="3" d="M115 90 L155 55 L172 72 L168 98 L145 94 L155 78 L135 92 Z" fill="white"/>
-                    <path class="svg-region" data-region="4" d="M35 62 L22 38 L48 52 L38 28 L58 48" fill="white"/>
-                    <path class="svg-region" data-region="5" d="M140 138 Q182 128 175 165 Q158 175 140 152" fill="white"/>
-                    <circle class="svg-region" data-region="6" cx="45" cy="68" r="8" fill="white"/>
-                    <path class="svg-region" data-region="7" d="M28 85 L18 98 L28 90 L22 102 L32 92" fill="white"/>
-                    <text class="region-number" x="87" y="130">1</text>
-                    <text class="region-number" x="47" y="80">2</text>
-                    <text class="region-number" x="145" y="78">3</text>
-                    <text class="region-number" x="32" y="48">4</text>
-                    <text class="region-number" x="155" y="155">5</text>
-                    <text class="region-number" x="38" y="72">6</text>
-                    <text class="region-number" x="15" y="95">7</text>
+                    <path class="svg-region" data-region="12" d="M40 70 Q30 50 50 40" style="fill:none; stroke:#333; stroke-width:3px"/>
+                    <path class="svg-region" data-region="8" d="M130 90 Q160 30 190 70 Q160 110 130 90" fill="white"/>
+                    <path class="svg-region" data-region="14" d="M130 90 Q160 30 190 70" style="fill:none; stroke:#333; stroke-width:4px"/>
+                    <rect class="svg-region" data-region="15" x="120" y="90" width="20" height="10" transform="rotate(-20)" fill="white"/>
+                    <path class="svg-region" data-region="5" d="M140 140 Q170 140 180 170 L160 180 Q150 150 140 150" fill="white"/>
+                    <ellipse class="svg-region" data-region="3" cx="110" cy="130" rx="30" ry="40" fill="white"/>
+                    <ellipse class="svg-region" data-region="9" cx="100" cy="130" rx="15" ry="25" fill="white"/>
+                    <circle class="svg-region" data-region="3" cx="80" cy="90" r="25" fill="white"/>
+                    <circle class="svg-region" data-region="2" cx="80" cy="85" r="5" fill="white"/>
+                    <path class="svg-region" data-region="7" d="M85 65 L95 45 L100 65" fill="white"/>
+                    <path class="svg-region" data-region="7" d="M70 65 L60 45 L55 65" fill="white"/>
+                    <path class="svg-region" data-region="4" d="M150 140 L160 130 L165 145" fill="white"/>
+                    <path class="svg-region" data-region="4" d="M165 150 L175 140 L180 155" fill="white"/>
+                    <path class="svg-region" data-region="1" d="M55 95 Q45 100 50 110" style="fill:none; stroke:red; stroke-width:3px"/>
+                    <circle cx="50" cy="110" r="2" fill="red" stroke="none"/>
+                    <path class="svg-region" data-region="13" d="M55 90 L60 95 L65 90" fill="white"/>
+                    <circle class="svg-region" data-region="6" cx="95" cy="80" r="5" fill="white"/>
+                    <ellipse class="svg-region" data-region="10" cx="90" cy="165" rx="5" ry="5" fill="white"/>
+                    <ellipse class="svg-region" data-region="10" cx="130" cy="165" rx="5" ry="5" fill="white"/>
+                    <rect class="svg-region" data-region="11" x="50" y="170" width="100" height="20" rx="5" fill="white"/>
+                    <circle cx="100" cy="175" r="5" fill="white" stroke="#333" stroke-width="2"/>
+                    <text class="region-number" x="50" y="115" style="font-size:10px">1</text>
+                    <text class="region-number" x="80" y="85" style="font-size:8px">2</text>
+                    <text class="region-number" x="125" y="130">3</text>
+                    <text class="region-number" x="160" y="130" style="font-size:10px">4</text>
+                    <text class="region-number" x="165" y="170">5</text>
+                    <text class="region-number" x="95" y="80" style="font-size:8px">6</text>
+                    <text class="region-number" x="105" y="55" style="font-size:8px">7</text>
+                    <text class="region-number" x="125" y="100" style="font-size:8px">8</text>
+                    <text class="region-number" x="100" y="130">9</text>
+                    <text class="region-number" x="90" y="165" style="font-size:8px">10</text>
+                    <text class="region-number" x="70" y="180">11</text>
+                    <text class="region-number" x="40" y="50">12</text>
+                    <text class="region-number" x="60" y="92" style="font-size:6px">13</text>
+                    <text class="region-number" x="160" y="70">14</text>
+                    <text class="region-number" x="160" y="50">15</text>
                 </svg>`
             }
         ];
@@ -1213,19 +1454,29 @@
         function renderLevelGrid() {
             const grid = document.getElementById('level-grid');
             grid.innerHTML = '';
-            
+
             const maxLevel = Math.max(1, ...Object.keys(levelProgress).map(Number), 1);
             const unlockedUpTo = Math.min(maxLevel + 1, pictures.length);
 
             for (let i = 1; i <= pictures.length; i++) {
+                const colourIndex = i - 1;
+                const colour = MASTER_PALETTE[colourIndex];
+                const colourUnlocked = permanentPalette.includes(colourIndex);
+
                 const btn = document.createElement('button');
                 btn.className = 'level-btn ' + (i <= unlockedUpTo ? 'unlocked' : 'locked');
-                btn.innerHTML = `${i}<div class="stars">${getStarsHTML(levelProgress[i] || 0)}</div>`;
-                
+
+                // Show colour dot to indicate if this level's colour is unlocked
+                const colourDot = colourUnlocked
+                    ? `<span class="colour-dot" style="background: ${colour.hex};" title="${colour.name} unlocked!"></span>`
+                    : `<span class="colour-dot locked" title="${colour.name} - not unlocked"></span>`;
+
+                btn.innerHTML = `${i}${colourDot}<div class="stars">${getStarsHTML(levelProgress[i] || 0)}</div>`;
+
                 if (i <= unlockedUpTo) {
                     btn.onclick = () => startLevel(i);
                 }
-                
+
                 grid.appendChild(btn);
             }
         }
@@ -1245,24 +1496,32 @@
             currentQuestion = 0;
             mistakes = 0;
             correctAnswers = 0;
-            unlockedColours = [];
+            sessionUnlockedColour = false;
             askedQuestions.clear();
             questionResults = [];
             regionFillCount = {};
-            
+
             const picture = pictures[currentLevel - 1];
-            
+            const newColourIndex = currentLevel - 1; // Colour index to unlock this level
+            const newColour = MASTER_PALETTE[newColourIndex];
+            const alreadyUnlocked = permanentPalette.includes(newColourIndex);
+
             document.getElementById('current-level').textContent = level;
             document.getElementById('picture-name').textContent = picture.name;
             document.getElementById('mistakes-counter').textContent = 'Mistakes: 0';
-            
-            const colourCount = picture.colours.length;
-            document.getElementById('colours-to-unlock').textContent = 
-                `🎨 ${colourCount} colour${colourCount > 1 ? 's' : ''} to unlock`;
-            
+
+            // Show which colour can be unlocked
+            if (alreadyUnlocked) {
+                document.getElementById('colours-to-unlock').textContent =
+                    `✅ ${newColour.name} already unlocked`;
+            } else {
+                document.getElementById('colours-to-unlock').textContent =
+                    `🎨 Unlock ${newColour.name} (get all 5 correct!)`;
+            }
+
             const timerContainer = document.getElementById('timer-container');
             timerContainer.style.display = level >= 10 ? 'block' : 'none';
-            
+
             showScreen('question-screen');
             showQuestion();
         }
@@ -1278,18 +1537,23 @@
                 `${question.num1} ${question.operator} ${question.num2} = ?`;
             
             document.getElementById('question-num').textContent = currentQuestion + 1;
-            
+
+            // Show colour preview for the colour being unlocked this level
             const colourPreviewContainer = document.getElementById('colour-preview-container');
             const allUnlockedMsg = document.getElementById('all-unlocked-msg');
-            
-            if (unlockedColours.length < picture.colours.length) {
+            const newColourIndex = currentLevel - 1;
+            const newColour = MASTER_PALETTE[newColourIndex];
+            const alreadyUnlocked = permanentPalette.includes(newColourIndex);
+
+            if (!alreadyUnlocked) {
                 colourPreviewContainer.style.display = 'block';
                 allUnlockedMsg.style.display = 'none';
                 const colourPreview = document.getElementById('colour-preview');
-                colourPreview.style.backgroundColor = picture.colours[unlockedColours.length];
+                colourPreview.style.backgroundColor = newColour.hex;
             } else {
                 colourPreviewContainer.style.display = 'none';
                 allUnlockedMsg.style.display = 'block';
+                allUnlockedMsg.textContent = `${newColour.name} already unlocked! ✅`;
             }
             
             renderProgressBar();
@@ -1358,34 +1622,32 @@
         // Submit answer
         function submitAnswer(timeout = false) {
             if (timerInterval) clearInterval(timerInterval);
-            
+
             const input = document.getElementById('answer-input');
             const userAnswer = parseInt(input.value);
             const correct = !timeout && userAnswer === window.currentQuestionData.answer;
-            const picture = pictures[currentLevel - 1];
-            
+
             questionResults.push(correct);
-            
+
             if (correct) {
                 playSound('correct');
                 showFeedback('✓', '#4CAF50');
                 correctAnswers++;
-                if (unlockedColours.length < picture.colours.length) {
-                    unlockedColours.push(unlockedColours.length);
-                }
             } else {
                 playSound('wrong');
                 showFeedback('✗', '#f44336');
                 mistakes++;
                 document.getElementById('mistakes-counter').textContent = 'Mistakes: ' + mistakes;
             }
-            
+
             currentQuestion++;
-            
+
             setTimeout(() => {
                 if (currentQuestion < 5) {
                     showQuestion();
                 } else {
+                    // All 5 questions answered - check if all correct
+                    sessionUnlockedColour = (correctAnswers === 5);
                     startColouring();
                 }
             }, 1000);
@@ -1404,16 +1666,35 @@
         // Colouring phase
         function startColouring() {
             const picture = pictures[currentLevel - 1];
-            
-            availableColours = [...unlockedColours];
+            const newColourIndex = currentLevel - 1;
+
+            // Build available colours: permanent palette + this level's colour (if earned in session)
+            availableColours = [];
+
+            // Add colours from permanent palette (only up to current level's colours)
+            for (let i = 0; i < currentLevel; i++) {
+                if (permanentPalette.includes(i)) {
+                    availableColours.push(i);
+                }
+            }
+
+            // Add current level's colour if earned this session (all 5 correct)
+            if (sessionUnlockedColour && !availableColours.includes(newColourIndex)) {
+                availableColours.push(newColourIndex);
+            }
+
+            // Sort by colour index for consistent display
+            availableColours.sort((a, b) => a - b);
+
             selectedColour = null;
             regionFillCount = {};
-            
+            window.originalAvailableColours = null; // Reset for new palette tracking
+
             document.getElementById('colouring-picture-name').textContent = picture.name;
-            
+
             const area = document.getElementById('colouring-area');
             area.innerHTML = picture.svg;
-            
+
             // Count total regions for each colour number
             const regionTotals = {};
             area.querySelectorAll('.svg-region').forEach(region => {
@@ -1422,43 +1703,66 @@
                 regionFillCount[regionNum] = 0;
             });
             window.regionTotals = regionTotals;
-            
+
             // Add click handlers to regions
             area.querySelectorAll('.svg-region').forEach(region => {
                 region.addEventListener('click', () => paintRegion(region));
             });
-            
+
             renderPalette();
-            
+
             document.getElementById('done-btn').style.display = 'none';
             document.getElementById('all-coloured-container').innerHTML = '';
-            
-            if (unlockedColours.length === 0) {
-                document.getElementById('all-coloured-container').innerHTML = 
-                    '<div class="all-coloured-msg warning">😢 No colours unlocked. Try again for better results!</div>';
+
+            if (availableColours.length === 0) {
+                document.getElementById('all-coloured-container').innerHTML =
+                    '<div class="all-coloured-msg warning">😢 No colours available! Go back and unlock some colours first.</div>';
                 document.getElementById('done-btn').style.display = 'inline-block';
             }
-            
+
             showScreen('colouring-screen');
         }
 
         function renderPalette() {
-            const picture = pictures[currentLevel - 1];
             const palette = document.getElementById('colour-palette');
             palette.innerHTML = '';
-            
-            availableColours.forEach((colourIndex) => {
+
+            // Track which colours were originally available (before any were used)
+            if (!window.originalAvailableColours) {
+                window.originalAvailableColours = [...availableColours];
+            }
+
+            // Show all colours needed for this level (1 through currentLevel)
+            for (let i = 0; i < currentLevel; i++) {
+                const colour = MASTER_PALETTE[i];
                 const btn = document.createElement('button');
                 btn.className = 'colour-btn';
-                btn.style.backgroundColor = picture.colours[colourIndex];
-                btn.innerHTML = `<span class="number">${colourIndex + 1}</span>`;
-                btn.dataset.colourIndex = colourIndex;
-                btn.onclick = () => selectColour(colourIndex, btn);
+
+                const wasOriginallyAvailable = window.originalAvailableColours.includes(i);
+                const isStillAvailable = availableColours.includes(i);
+
+                if (isStillAvailable) {
+                    // Colour is available to use
+                    btn.style.backgroundColor = colour.hex;
+                    btn.innerHTML = `<span class="number">${i + 1}</span>`;
+                    btn.dataset.colourIndex = i;
+                    btn.onclick = () => selectColour(i, btn);
+                } else if (wasOriginallyAvailable) {
+                    // Colour was used - show greyed out with checkmark
+                    btn.style.backgroundColor = '#ccc';
+                    btn.style.opacity = '0.5';
+                    btn.innerHTML = `<span class="number">✓</span>`;
+                    btn.disabled = true;
+                    btn.title = `${colour.name} - Already used`;
+                } else {
+                    // Colour is locked - show with lock
+                    btn.style.backgroundColor = '#ddd';
+                    btn.style.opacity = '0.6';
+                    btn.innerHTML = `<span class="number">🔒</span>`;
+                    btn.disabled = true;
+                    btn.title = `${colour.name} - Not unlocked yet`;
+                }
                 palette.appendChild(btn);
-            });
-            
-            if (availableColours.length === 0 && unlockedColours.length > 0) {
-                palette.innerHTML = '<p style="color: #4CAF50; font-weight: bold;">All colours used! 🎨</p>';
             }
         }
 
@@ -1472,17 +1776,16 @@
         function paintRegion(region) {
             if (selectedColour === null) return;
             if (region.classList.contains('filled')) return;
-            
-            const picture = pictures[currentLevel - 1];
+
             const regionNum = parseInt(region.dataset.region);
-            
+
             // Check if the colour matches the region number
             if (selectedColour + 1 !== regionNum) {
                 return;
             }
-            
+
             // Paint just THIS region (not all with same number)
-            region.style.fill = picture.colours[selectedColour];
+            region.style.fill = MASTER_PALETTE[selectedColour].hex;
             region.classList.add('filled');
             playSound('paint');
             
@@ -1509,16 +1812,19 @@
         }
 
         function checkColouringComplete() {
+            // Check if all available colours have been used
             if (availableColours.length === 0) {
-                const picture = pictures[currentLevel - 1];
-                const allColoursUnlocked = unlockedColours.length === picture.colours.length;
-                
-                if (allColoursUnlocked) {
-                    document.getElementById('all-coloured-container').innerHTML = 
+                // Count how many colours this level needs vs how many we had
+                const coloursNeeded = currentLevel;
+                const coloursAvailableAtStart = permanentPalette.filter(c => c < currentLevel).length + (sessionUnlockedColour ? 1 : 0);
+
+                if (coloursAvailableAtStart >= coloursNeeded) {
+                    document.getElementById('all-coloured-container').innerHTML =
                         '<div class="all-coloured-msg">🎨 Perfect! All colours applied!</div>';
                 } else {
-                    document.getElementById('all-coloured-container').innerHTML = 
-                        `<div class="all-coloured-msg warning">🎨 You unlocked ${unlockedColours.length} of ${picture.colours.length} colours. Try again for a complete picture!</div>`;
+                    const missing = coloursNeeded - coloursAvailableAtStart;
+                    document.getElementById('all-coloured-container').innerHTML =
+                        `<div class="all-coloured-msg warning">🎨 ${missing} colour${missing > 1 ? 's' : ''} still locked. Go back and unlock them!</div>`;
                 }
                 document.getElementById('done-btn').style.display = 'inline-block';
             }
@@ -1526,26 +1832,34 @@
 
         function finishColouring() {
             playSound('complete');
-            
+
+            const newColourIndex = currentLevel - 1;
+            const newColour = MASTER_PALETTE[newColourIndex];
+
             let stars = 0;
             if (mistakes === 0) stars = 3;
             else if (mistakes === 1) stars = 2;
             else if (mistakes === 2) stars = 1;
-            
+
+            // If got all 5 correct and colour not already in permanent palette, add it
+            let colourUnlocked = false;
+            if (sessionUnlockedColour && !permanentPalette.includes(newColourIndex)) {
+                permanentPalette.push(newColourIndex);
+                colourUnlocked = true;
+            }
+
             levelProgress[currentLevel] = Math.max(levelProgress[currentLevel] || 0, stars);
-            localStorage.setItem('mathByColour_progress', JSON.stringify(levelProgress));
-            
-            showCelebration(stars);
+            saveProgress();
+
+            showCelebration(stars, colourUnlocked, newColour.name);
         }
 
-        function showCelebration(stars) {
-            const picture = pictures[currentLevel - 1];
-            
+        function showCelebration(stars, colourUnlocked, colourName) {
             const completedImage = document.getElementById('completed-image');
             completedImage.innerHTML = document.getElementById('colouring-area').innerHTML;
-            
+
             completedImage.querySelectorAll('.region-number').forEach(n => n.style.display = 'none');
-            
+
             const starsDisplay = document.getElementById('stars-display');
             const starSpans = starsDisplay.querySelectorAll('.star');
             starSpans.forEach((span, i) => {
@@ -1554,10 +1868,10 @@
                     setTimeout(() => span.classList.add('earned'), 300 * (i + 1));
                 }
             });
-            
+
             let message = '';
             if (stars === 3) {
-                message = "PERFECT! Amazing job, Alina! 🎉🌟";
+                message = "PERFECT! Amazing job! 🎉🌟";
             } else if (stars === 2) {
                 message = "Great work! Almost perfect! ⭐⭐";
             } else if (stars === 1) {
@@ -1565,9 +1879,16 @@
             } else {
                 message = "Keep practicing! You'll get more stars next time! 💪";
             }
-            
+
+            // Add colour unlock message
+            if (colourUnlocked) {
+                message += `\n🎨 ${colourName} unlocked!`;
+            } else if (!permanentPalette.includes(currentLevel - 1)) {
+                message += `\n🔒 Get all 5 correct to unlock ${colourName}!`;
+            }
+
             document.getElementById('completion-message').textContent = message;
-            
+
             showScreen('celebration-screen');
         }
 
@@ -1575,7 +1896,7 @@
             if (currentLevel < pictures.length) {
                 startLevel(currentLevel + 1);
             } else {
-                alert("Congratulations Alina! You've completed all levels! 🎉");
+                alert("Congratulations! You've completed all levels! 🎉");
                 showScreen('level-screen');
             }
         }
@@ -1609,7 +1930,7 @@
                     canvas.toBlob(function(blob) {
                         if (blob) {
                             const link = document.createElement('a');
-                            link.download = `alina-${picture.name.toLowerCase()}-level${currentLevel}.png`;
+                            link.download = `mathbycolour-${picture.name.toLowerCase()}-level${currentLevel}.png`;
                             link.href = URL.createObjectURL(blob);
                             document.body.appendChild(link);
                             link.click();
@@ -1620,7 +1941,7 @@
                 } catch(e) {
                     const dataUrl = canvas.toDataURL('image/png');
                     const link = document.createElement('a');
-                    link.download = `alina-${picture.name.toLowerCase()}-level${currentLevel}.png`;
+                    link.download = `mathbycolour-${picture.name.toLowerCase()}-level${currentLevel}.png`;
                     link.href = dataUrl;
                     document.body.appendChild(link);
                     link.click();
