@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Math by Colour - Alina's Game</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -13,23 +14,62 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Fredoka', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 20px;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Floating decorations */
+        .decoration {
+            position: fixed;
+            pointer-events: none;
+            z-index: 0;
+            font-size: 2rem;
+            opacity: 0.6;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .decoration:nth-child(1) { top: 5%; left: 5%; animation-delay: 0s; }
+        .decoration:nth-child(2) { top: 15%; right: 8%; animation-delay: 1s; font-size: 2.5rem; }
+        .decoration:nth-child(3) { top: 70%; left: 3%; animation-delay: 2s; }
+        .decoration:nth-child(4) { top: 80%; right: 5%; animation-delay: 3s; font-size: 1.8rem; }
+        .decoration:nth-child(5) { top: 45%; left: 2%; animation-delay: 4s; font-size: 2.2rem; }
+        .decoration:nth-child(6) { top: 90%; right: 15%; animation-delay: 0.5s; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            25% { transform: translateY(-15px) rotate(5deg); }
+            50% { transform: translateY(-8px) rotate(-3deg); }
+            75% { transform: translateY(-20px) rotate(3deg); }
         }
 
         .game-container {
-            background: white;
+            background: linear-gradient(145deg, #ffffff 0%, #fff5f5 100%);
             border-radius: 30px;
             padding: 30px;
             max-width: 600px;
             width: 100%;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3), 0 0 0 4px rgba(255,255,255,0.3);
             text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .game-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 8px;
+            background: linear-gradient(90deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3, #54a0ff);
+            border-radius: 30px 30px 0 0;
         }
 
         .screen {
@@ -38,17 +78,36 @@
 
         .screen.active {
             display: block;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         h1 {
-            color: #764ba2;
             font-size: 2.5em;
+            font-weight: 700;
             margin-bottom: 10px;
+            background: linear-gradient(90deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3, #54a0ff, #5f27cd);
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: rainbow 4s linear infinite;
+        }
+
+        @keyframes rainbow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
 
         h2 {
-            color: #667eea;
+            color: #5f27cd;
             font-size: 1.8em;
+            font-weight: 600;
             margin-bottom: 20px;
         }
 
@@ -64,23 +123,36 @@
             border: none;
             padding: 15px 40px;
             font-size: 1.3em;
+            font-family: 'Fredoka', sans-serif;
+            font-weight: 600;
             border-radius: 50px;
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             margin: 10px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
         }
 
         .btn:hover, .btn:active {
-            transform: scale(1.05);
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+            transform: scale(1.08) translateY(-3px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.5);
         }
 
         .btn-secondary {
             background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            box-shadow: 0 4px 15px rgba(240, 147, 251, 0.4);
+        }
+
+        .btn-secondary:hover {
+            box-shadow: 0 10px 30px rgba(240, 147, 251, 0.5);
         }
 
         .btn-success {
             background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            box-shadow: 0 4px 15px rgba(79, 172, 254, 0.4);
+        }
+
+        .btn-success:hover {
+            box-shadow: 0 10px 30px rgba(79, 172, 254, 0.5);
         }
 
         .btn-small {
@@ -90,6 +162,7 @@
 
         .btn-danger {
             background: linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%);
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
         }
 
         /* Level Select */
@@ -102,14 +175,15 @@
 
         .level-btn {
             aspect-ratio: 1;
-            border-radius: 15px;
+            border-radius: 18px;
             border: 3px solid #ddd;
-            background: white;
+            background: linear-gradient(145deg, #ffffff, #f5f5f5);
             font-size: 1.5em;
             font-weight: bold;
+            font-family: 'Fredoka', sans-serif;
             color: #764ba2;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -119,15 +193,17 @@
 
         .level-btn.unlocked {
             border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
         }
 
         .level-btn.unlocked:hover {
-            transform: scale(1.1);
-            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.3);
+            transform: scale(1.15) rotate(-3deg);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            border-color: #f093fb;
         }
 
         .level-btn.locked {
-            background: #f0f0f0;
+            background: linear-gradient(145deg, #f0f0f0, #e0e0e0);
             color: #ccc;
             cursor: not-allowed;
         }
@@ -152,36 +228,70 @@
         }
 
         .colours-to-unlock {
-            color: #667eea;
+            color: #5f27cd;
             font-size: 1em;
+            font-weight: 500;
         }
 
         .question-box {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
             color: white;
             padding: 40px;
-            border-radius: 20px;
+            border-radius: 24px;
             margin: 20px 0;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .question-box::before {
+            content: '✨';
+            position: absolute;
+            top: 10px;
+            left: 15px;
+            font-size: 1.5rem;
+            animation: twinkle 2s ease-in-out infinite;
+        }
+
+        .question-box::after {
+            content: '⭐';
+            position: absolute;
+            bottom: 10px;
+            right: 15px;
+            font-size: 1.5rem;
+            animation: twinkle 2s ease-in-out infinite 0.5s;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.5; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
         }
 
         .question-text {
             font-size: 3em;
             font-weight: bold;
             margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
         }
 
         .answer-input {
             font-size: 2em;
+            font-family: 'Fredoka', sans-serif;
+            font-weight: 600;
             padding: 15px 30px;
-            border-radius: 15px;
-            border: 3px solid #ddd;
+            border-radius: 20px;
+            border: 4px solid #ddd;
             width: 150px;
             text-align: center;
             outline: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
 
         .answer-input:focus {
             border-color: #667eea;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+            transform: scale(1.02);
         }
 
         .submit-btn {
@@ -199,8 +309,8 @@
         }
 
         .progress-dot {
-            width: 36px;
-            height: 36px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
             border: 3px solid #ddd;
             display: flex;
@@ -209,52 +319,72 @@
             font-weight: bold;
             color: #888;
             font-size: 0.9em;
+            transition: all 0.3s ease;
+            background: white;
         }
 
         .progress-dot.current {
             border-color: #667eea;
             color: #667eea;
+            transform: scale(1.1);
+            box-shadow: 0 0 15px rgba(102, 126, 234, 0.4);
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 15px rgba(102, 126, 234, 0.4); }
+            50% { box-shadow: 0 0 25px rgba(102, 126, 234, 0.6); }
         }
 
         .progress-dot.correct {
-            background: #4CAF50;
+            background: linear-gradient(135deg, #4CAF50, #8BC34A);
             border-color: #4CAF50;
             color: white;
+            transform: scale(1.05);
         }
 
         .progress-dot.wrong {
-            background: #f44336;
+            background: linear-gradient(135deg, #f44336, #ff5722);
             border-color: #f44336;
             color: white;
         }
 
         .colour-preview {
             display: inline-block;
-            width: 60px;
-            height: 60px;
+            width: 70px;
+            height: 70px;
             border-radius: 50%;
-            border: 4px solid white;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            border: 5px solid white;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.25);
             margin: 10px;
+            animation: colorPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes colorPulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 6px 20px rgba(0,0,0,0.25); }
+            50% { transform: scale(1.1); box-shadow: 0 8px 30px rgba(0,0,0,0.35); }
         }
 
         .unlock-text {
             font-size: 1.2em;
             margin-top: 10px;
+            font-weight: 500;
         }
 
         .timer-bar {
-            height: 10px;
+            height: 12px;
             background: #eee;
-            border-radius: 5px;
+            border-radius: 6px;
             margin: 15px 0;
             overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .timer-fill {
             height: 100%;
             background: linear-gradient(90deg, #4CAF50, #8BC34A);
             transition: width 0.1s linear;
+            border-radius: 6px;
         }
 
         .timer-fill.warning {
@@ -269,6 +399,10 @@
         .colouring-area {
             position: relative;
             margin: 20px 0;
+            background: white;
+            border-radius: 20px;
+            padding: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
 
         .colouring-area svg {
@@ -280,25 +414,30 @@
             display: flex;
             justify-content: center;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 12px;
             margin: 20px 0;
             min-height: 70px;
         }
 
         .colour-btn {
-            width: 60px;
-            height: 60px;
+            width: 65px;
+            height: 65px;
             border-radius: 50%;
             border: 4px solid #ddd;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             position: relative;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .colour-btn:hover {
+            transform: scale(1.15);
         }
 
         .colour-btn.selected {
-            transform: scale(1.2);
+            transform: scale(1.25);
             border-color: #333;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.35);
         }
 
         .colour-btn.used {
@@ -318,20 +457,21 @@
             transform: translate(-50%, -50%);
             font-weight: bold;
             color: white;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-            font-size: 1.2em;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.6);
+            font-size: 1.3em;
         }
 
         .svg-region {
             stroke: #333;
             stroke-width: 2;
             cursor: pointer;
-            transition: fill 0.3s;
+            transition: all 0.3s;
             fill: white;
         }
 
         .svg-region:hover {
             opacity: 0.8;
+            filter: brightness(1.1);
         }
 
         .svg-region.filled {
@@ -368,24 +508,27 @@
         .stars-display .star {
             color: #ddd;
             transition: color 0.3s;
+            display: inline-block;
         }
 
         .stars-display .star.earned {
             color: #ffc107;
             animation: starPop 0.5s ease-out;
+            text-shadow: 0 0 20px rgba(255, 193, 7, 0.6);
         }
 
         @keyframes starPop {
-            0% { transform: scale(0); }
-            50% { transform: scale(1.3); }
-            100% { transform: scale(1); }
+            0% { transform: scale(0) rotate(-180deg); }
+            50% { transform: scale(1.4) rotate(20deg); }
+            100% { transform: scale(1) rotate(0deg); }
         }
 
         .completed-image {
-            border: 5px solid #ffc107;
-            border-radius: 20px;
-            padding: 10px;
+            border: 6px solid #ffc107;
+            border-radius: 24px;
+            padding: 15px;
             background: white;
+            box-shadow: 0 8px 30px rgba(255, 193, 7, 0.3);
         }
 
         /* Feedback overlay */
@@ -411,6 +554,7 @@
         .feedback-icon {
             font-size: 150px;
             animation: feedbackPop 0.5s ease-out;
+            text-shadow: 0 10px 40px rgba(0,0,0,0.3);
         }
 
         @keyframes feedbackPop {
@@ -426,8 +570,9 @@
         }
 
         .picture-name {
-            color: #764ba2;
-            font-size: 1.2em;
+            color: #5f27cd;
+            font-size: 1.3em;
+            font-weight: 600;
             margin-bottom: 10px;
         }
 
@@ -436,13 +581,16 @@
             background: linear-gradient(135deg, #4CAF50, #8BC34A);
             color: white;
             padding: 15px 30px;
-            border-radius: 15px;
+            border-radius: 20px;
             margin: 15px 0;
             font-size: 1.2em;
+            font-weight: 500;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
         }
 
         .all-coloured-msg.warning {
             background: linear-gradient(135deg, #ff9800, #ffc107);
+            box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
         }
 
         .reset-link {
@@ -452,29 +600,49 @@
             text-decoration: underline;
             margin-top: 20px;
             display: inline-block;
+            transition: color 0.3s;
         }
 
         .reset-link:hover {
-            color: #666;
+            color: #5f27cd;
         }
 
         .home-link {
-            display: inline-block;
-            color: #667eea;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #5f27cd;
             text-decoration: none;
-            font-size: 1em;
+            font-size: 1.1em;
+            font-weight: 500;
             margin-bottom: 15px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            background: rgba(95, 39, 205, 0.1);
+            transition: all 0.3s ease;
         }
 
         .home-link:hover {
-            text-decoration: underline;
+            background: rgba(95, 39, 205, 0.2);
+            transform: translateX(-5px);
+        }
+
+        /* Welcome screen decorations */
+        .welcome-star {
+            animation: wiggle 3s ease-in-out infinite;
+        }
+
+        @keyframes wiggle {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-10deg); }
+            75% { transform: rotate(10deg); }
         }
 
         /* Responsive */
         @media (max-width: 500px) {
             .game-container {
                 padding: 20px;
-                border-radius: 20px;
+                border-radius: 24px;
             }
 
             h1 {
@@ -490,21 +658,33 @@
             }
 
             .progress-dot {
-                width: 30px;
-                height: 30px;
+                width: 32px;
+                height: 32px;
                 font-size: 0.8em;
+            }
+
+            .decoration {
+                font-size: 1.5rem;
             }
         }
     </style>
 </head>
 <body>
+    <!-- Floating decorations -->
+    <div class="decoration">⭐</div>
+    <div class="decoration">🌈</div>
+    <div class="decoration">✨</div>
+    <div class="decoration">🎨</div>
+    <div class="decoration">🦋</div>
+    <div class="decoration">🎀</div>
+
     <div class="game-container">
         <!-- Welcome Screen -->
         <div id="welcome-screen" class="screen active">
             <a href="../index.html" class="home-link">← Back to All Games</a>
             <h1>🎨 Math by Colour</h1>
             <p class="subtitle">Welcome, Alina! 🌟</p>
-            <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgdmlld0JveD0iMCAwIDE1MCAxNTAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTc1IDEwbDIwIDQwaDQ1bC0zNSAzMCAxNSA0NS00NS0zMC00NSAzMCAxNS00NS0zNS0zMGg0NXoiIGZpbGw9IiNmZmM1MDciIHN0cm9rZT0iI2ZmYTAwMCIgc3Ryb2tlLXdpZHRoPSIzIi8+PC9zdmc+" alt="Star" style="width: 150px; margin: 20px 0;">
+            <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgdmlld0JveD0iMCAwIDE1MCAxNTAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTc1IDEwbDIwIDQwaDQ1bC0zNSAzMCAxNSA0NS00NS0zMC00NSAzMCAxNS00NS0zNS0zMGg0NXoiIGZpbGw9IiNmZmM1MDciIHN0cm9rZT0iI2ZmYTAwMCIgc3Ryb2tlLXdpZHRoPSIzIi8+PC9zdmc+" alt="Star" class="welcome-star" style="width: 150px; margin: 20px 0;">
             <p style="color: #666; margin-bottom: 30px;">Answer math questions to unlock colours<br>and create beautiful pictures!</p>
             <button class="btn" onclick="showScreen('level-screen')">Let's Play! 🚀</button>
             <br>
