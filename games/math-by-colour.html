@@ -1,0 +1,1455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Math by Colour - Alina's Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: white;
+            border-radius: 30px;
+            padding: 30px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        h1 {
+            color: #764ba2;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        h2 {
+            color: #667eea;
+            font-size: 1.8em;
+            margin-bottom: 20px;
+        }
+
+        .subtitle {
+            color: #888;
+            font-size: 1.2em;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.3em;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin: 10px;
+        }
+
+        .btn:hover, .btn:active {
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .btn-small {
+            padding: 10px 25px;
+            font-size: 1em;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%);
+        }
+
+        /* Level Select */
+        .level-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .level-btn {
+            aspect-ratio: 1;
+            border-radius: 15px;
+            border: 3px solid #ddd;
+            background: white;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #764ba2;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .level-btn.unlocked {
+            border-color: #667eea;
+        }
+
+        .level-btn.unlocked:hover {
+            transform: scale(1.1);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .level-btn.locked {
+            background: #f0f0f0;
+            color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .level-btn .stars {
+            font-size: 0.5em;
+            margin-top: 5px;
+        }
+
+        /* Question Screen */
+        .question-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 0 10px;
+        }
+
+        .question-counter {
+            color: #888;
+            font-size: 1.1em;
+        }
+
+        .colours-to-unlock {
+            color: #667eea;
+            font-size: 1em;
+        }
+
+        .question-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 20px;
+            margin: 20px 0;
+        }
+
+        .question-text {
+            font-size: 3em;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .answer-input {
+            font-size: 2em;
+            padding: 15px 30px;
+            border-radius: 15px;
+            border: 3px solid #ddd;
+            width: 150px;
+            text-align: center;
+            outline: none;
+        }
+
+        .answer-input:focus {
+            border-color: #667eea;
+        }
+
+        .submit-btn {
+            display: block;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .progress-bar {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .progress-dot {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 3px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #888;
+            font-size: 0.9em;
+        }
+
+        .progress-dot.current {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .progress-dot.correct {
+            background: #4CAF50;
+            border-color: #4CAF50;
+            color: white;
+        }
+
+        .progress-dot.wrong {
+            background: #f44336;
+            border-color: #f44336;
+            color: white;
+        }
+
+        .colour-preview {
+            display: inline-block;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 4px solid white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            margin: 10px;
+        }
+
+        .unlock-text {
+            font-size: 1.2em;
+            margin-top: 10px;
+        }
+
+        .timer-bar {
+            height: 10px;
+            background: #eee;
+            border-radius: 5px;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+
+        .timer-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #8BC34A);
+            transition: width 0.1s linear;
+        }
+
+        .timer-fill.warning {
+            background: linear-gradient(90deg, #ff9800, #ffc107);
+        }
+
+        .timer-fill.danger {
+            background: linear-gradient(90deg, #f44336, #ff5722);
+        }
+
+        /* Colouring Screen */
+        .colouring-area {
+            position: relative;
+            margin: 20px 0;
+        }
+
+        .colouring-area svg {
+            width: 100%;
+            max-height: 350px;
+        }
+
+        .colour-palette {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 20px 0;
+            min-height: 70px;
+        }
+
+        .colour-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 4px solid #ddd;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .colour-btn.selected {
+            transform: scale(1.2);
+            border-color: #333;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+
+        .colour-btn.used {
+            animation: colourUsed 0.5s ease-out forwards;
+        }
+
+        @keyframes colourUsed {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.3); opacity: 0.5; }
+            100% { transform: scale(0); opacity: 0; display: none; }
+        }
+
+        .colour-btn .number {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            font-size: 1.2em;
+        }
+
+        .svg-region {
+            stroke: #333;
+            stroke-width: 2;
+            cursor: pointer;
+            transition: fill 0.3s;
+            fill: white;
+        }
+
+        .svg-region:hover {
+            opacity: 0.8;
+        }
+
+        .svg-region.filled {
+            cursor: default;
+        }
+
+        .region-number {
+            font-size: 20px;
+            font-weight: bold;
+            fill: #666;
+            pointer-events: none;
+        }
+
+        .region-number.hidden {
+            display: none;
+        }
+
+        /* Celebration */
+        .celebration {
+            animation: celebrate 0.5s ease-out;
+        }
+
+        @keyframes celebrate {
+            0% { transform: scale(0.5); opacity: 0; }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .stars-display {
+            font-size: 4em;
+            margin: 20px 0;
+        }
+
+        .stars-display .star {
+            color: #ddd;
+            transition: color 0.3s;
+        }
+
+        .stars-display .star.earned {
+            color: #ffc107;
+            animation: starPop 0.5s ease-out;
+        }
+
+        @keyframes starPop {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+
+        .completed-image {
+            border: 5px solid #ffc107;
+            border-radius: 20px;
+            padding: 10px;
+            background: white;
+        }
+
+        /* Feedback overlay */
+        .feedback-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .feedback-overlay.show {
+            opacity: 1;
+        }
+
+        .feedback-icon {
+            font-size: 150px;
+            animation: feedbackPop 0.5s ease-out;
+        }
+
+        @keyframes feedbackPop {
+            0% { transform: scale(0) rotate(-20deg); }
+            50% { transform: scale(1.2) rotate(10deg); }
+            100% { transform: scale(1) rotate(0deg); }
+        }
+
+        .mistakes-counter {
+            color: #888;
+            font-size: 1em;
+            margin-top: 10px;
+        }
+
+        .picture-name {
+            color: #764ba2;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+
+        /* All done message */
+        .all-coloured-msg {
+            background: linear-gradient(135deg, #4CAF50, #8BC34A);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 15px;
+            margin: 15px 0;
+            font-size: 1.2em;
+        }
+
+        .all-coloured-msg.warning {
+            background: linear-gradient(135deg, #ff9800, #ffc107);
+        }
+
+        .reset-link {
+            color: #999;
+            font-size: 0.9em;
+            cursor: pointer;
+            text-decoration: underline;
+            margin-top: 20px;
+            display: inline-block;
+        }
+
+        .reset-link:hover {
+            color: #666;
+        }
+
+        /* Responsive */
+        @media (max-width: 500px) {
+            .game-container {
+                padding: 20px;
+                border-radius: 20px;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            .question-text {
+                font-size: 2.5em;
+            }
+
+            .level-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+
+            .progress-dot {
+                width: 30px;
+                height: 30px;
+                font-size: 0.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <!-- Welcome Screen -->
+        <div id="welcome-screen" class="screen active">
+            <h1>🎨 Math by Colour</h1>
+            <p class="subtitle">Welcome, Alina! 🌟</p>
+            <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgdmlld0JveD0iMCAwIDE1MCAxNTAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTc1IDEwbDIwIDQwaDQ1bC0zNSAzMCAxNSA0NS00NS0zMC00NSAzMCAxNS00NS0zNS0zMGg0NXoiIGZpbGw9IiNmZmM1MDciIHN0cm9rZT0iI2ZmYTAwMCIgc3Ryb2tlLXdpZHRoPSIzIi8+PC9zdmc+" alt="Star" style="width: 150px; margin: 20px 0;">
+            <p style="color: #666; margin-bottom: 30px;">Answer math questions to unlock colours<br>and create beautiful pictures!</p>
+            <button class="btn" onclick="showScreen('level-screen')">Let's Play! 🚀</button>
+            <br>
+            <span class="reset-link" onclick="confirmReset()">Reset Progress</span>
+        </div>
+
+        <!-- Level Select Screen -->
+        <div id="level-screen" class="screen">
+            <h2>Choose a Level</h2>
+            <div class="level-grid" id="level-grid"></div>
+            <button class="btn btn-secondary" onclick="showScreen('welcome-screen')">← Back</button>
+        </div>
+
+        <!-- Question Screen -->
+        <div id="question-screen" class="screen">
+            <h2>Level <span id="current-level">1</span></h2>
+            <div class="picture-name" id="picture-name">Star</div>
+            <div class="question-info">
+                <span class="question-counter">Question <span id="question-num">1</span> of 5</span>
+                <span class="colours-to-unlock" id="colours-to-unlock">🎨 1 colour to unlock</span>
+            </div>
+            <div class="progress-bar" id="progress-bar"></div>
+            <div id="timer-container" style="display: none;">
+                <div class="timer-bar">
+                    <div class="timer-fill" id="timer-fill"></div>
+                </div>
+            </div>
+            <div class="question-box">
+                <div class="question-text" id="question-text">3 + 5 = ?</div>
+                <div id="colour-preview-container">
+                    <div class="colour-preview" id="colour-preview"></div>
+                    <div class="unlock-text">Answer correctly to unlock this colour!</div>
+                </div>
+                <div id="all-unlocked-msg" style="display: none;">
+                    <p style="font-size: 1.2em; margin-top: 10px;">✨ All colours unlocked! Keep going for more stars! ✨</p>
+                </div>
+            </div>
+            <input type="number" class="answer-input" id="answer-input" placeholder="?" inputmode="numeric">
+            <button class="btn submit-btn" onclick="submitAnswer()">Check Answer ✓</button>
+            <div class="mistakes-counter" id="mistakes-counter">Mistakes: 0</div>
+        </div>
+
+        <!-- Colouring Screen -->
+        <div id="colouring-screen" class="screen">
+            <h2>Colour Your Picture! 🎨</h2>
+            <div class="picture-name" id="colouring-picture-name">Star</div>
+            <div class="colouring-area" id="colouring-area"></div>
+            <div class="colour-palette" id="colour-palette"></div>
+            <div id="all-coloured-container"></div>
+            <button class="btn btn-success" id="done-btn" onclick="finishColouring()" style="display: none;">Done! ✨</button>
+        </div>
+
+        <!-- Celebration Screen -->
+        <div id="celebration-screen" class="screen">
+            <div class="celebration">
+                <h2>Amazing Work, Alina! 🎉</h2>
+                <div class="stars-display" id="stars-display">
+                    <span class="star">⭐</span>
+                    <span class="star">⭐</span>
+                    <span class="star">⭐</span>
+                </div>
+                <div class="completed-image" id="completed-image"></div>
+                <p style="margin: 20px 0; color: #666;" id="completion-message"></p>
+                <button class="btn" onclick="saveImage()">Save Picture 📸</button>
+                <button class="btn btn-success" onclick="nextLevel()">Next Level →</button>
+                <button class="btn btn-secondary" onclick="showScreen('level-screen')">Level Select</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feedback Overlay -->
+    <div class="feedback-overlay" id="feedback-overlay">
+        <div class="feedback-icon" id="feedback-icon">✓</div>
+    </div>
+
+    <script>
+        // Game State
+        let currentLevel = 1;
+        let currentQuestion = 0;
+        let mistakes = 0;
+        let correctAnswers = 0;
+        let unlockedColours = [];
+        let selectedColour = null;
+        let timerInterval = null;
+        let timeLeft = 15;
+        let askedQuestions = new Set();
+        let availableColours = [];
+        let questionResults = [];
+        let regionFillCount = {}; // Track how many regions of each number are filled
+
+        // Progress storage
+        let levelProgress = JSON.parse(localStorage.getItem('mathByColour_progress') || '{}');
+
+        // Audio Context for sound effects
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new AudioContext();
+            }
+        }
+
+        function playSound(type) {
+            initAudio();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            if (type === 'correct') {
+                oscillator.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+                oscillator.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1);
+                oscillator.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.2);
+                gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+                oscillator.start(audioCtx.currentTime);
+                oscillator.stop(audioCtx.currentTime + 0.4);
+            } else if (type === 'wrong') {
+                oscillator.frequency.setValueAtTime(200, audioCtx.currentTime);
+                oscillator.frequency.setValueAtTime(150, audioCtx.currentTime + 0.1);
+                gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                oscillator.start(audioCtx.currentTime);
+                oscillator.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'complete') {
+                const notes = [523.25, 587.33, 659.25, 783.99, 880, 1046.5];
+                notes.forEach((freq, i) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.frequency.setValueAtTime(freq, audioCtx.currentTime + i * 0.1);
+                    gain.gain.setValueAtTime(0.2, audioCtx.currentTime + i * 0.1);
+                    gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + i * 0.1 + 0.2);
+                    osc.start(audioCtx.currentTime + i * 0.1);
+                    osc.stop(audioCtx.currentTime + i * 0.1 + 0.2);
+                });
+            } else if (type === 'paint') {
+                oscillator.frequency.setValueAtTime(800, audioCtx.currentTime);
+                gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                oscillator.start(audioCtx.currentTime);
+                oscillator.stop(audioCtx.currentTime + 0.1);
+            }
+        }
+
+        // Reset game progress
+        function confirmReset() {
+            if (confirm('Are you sure you want to reset all progress? This cannot be undone!')) {
+                localStorage.removeItem('mathByColour_progress');
+                levelProgress = {};
+                renderLevelGrid();
+                alert('Progress has been reset! 🔄');
+            }
+        }
+
+        // Pictures Library - Each has appropriate number of colours for complexity
+        const pictures = [
+            {
+                name: "Star",
+                colours: ["#FFD700"],
+                colourNames: ["Gold"],
+                svg: `<svg viewBox="0 0 200 200">
+                    <path class="svg-region" data-region="1" d="M100 15 L118 75 L182 75 L130 115 L148 175 L100 140 L52 175 L70 115 L18 75 L82 75 Z" fill="white"/>
+                    <text class="region-number" x="92" y="105">1</text>
+                </svg>`
+            },
+            {
+                name: "Heart",
+                colours: ["#FF1493"],
+                colourNames: ["Pink"],
+                svg: `<svg viewBox="0 0 200 200">
+                    <path class="svg-region" data-region="1" d="M100 175 C20 115 20 55 60 35 C85 25 100 45 100 45 C100 45 115 25 140 35 C180 55 180 115 100 175" fill="white"/>
+                    <text class="region-number" x="92" y="100">1</text>
+                </svg>`
+            },
+            {
+                name: "Apple",
+                colours: ["#FF3B30", "#4CD964"],
+                colourNames: ["Red", "Green"],
+                svg: `<svg viewBox="0 0 200 200">
+                    <path class="svg-region" data-region="1" d="M100 50 C50 50 30 90 30 130 C30 170 60 185 100 185 C140 185 170 170 170 130 C170 90 150 50 100 50" fill="white"/>
+                    <path class="svg-region" data-region="2" d="M100 50 C100 50 105 25 125 20 C125 20 115 40 100 50" fill="white"/>
+                    <text class="region-number" x="92" y="120">1</text>
+                    <text class="region-number" x="107" y="40">2</text>
+                </svg>`
+            },
+            {
+                name: "Fish",
+                colours: ["#00CED1", "#FF8C00"],
+                colourNames: ["Turquoise", "Orange"],
+                svg: `<svg viewBox="0 0 200 200">
+                    <ellipse class="svg-region" data-region="1" cx="90" cy="100" rx="65" ry="40" fill="white"/>
+                    <path class="svg-region" data-region="2" d="M155 100 L195 65 L195 135 Z" fill="white"/>
+                    <circle cx="45" cy="92" r="6" fill="#333"/>
+                    <text class="region-number" x="82" y="105">1</text>
+                    <text class="region-number" x="168" y="105">2</text>
+                </svg>`
+            },
+            {
+                name: "Flower",
+                colours: ["#FF69B4", "#FFD700", "#4CD964"],
+                colourNames: ["Pink", "Yellow", "Green"],
+                svg: `<svg viewBox="0 0 200 200">
+                    <ellipse class="svg-region" data-region="1" cx="100" cy="45" rx="28" ry="25" fill="white"/>
+                    <ellipse class="svg-region" data-region="1" cx="55" cy="80" rx="28" ry="25" transform="rotate(-45 55 80)" fill="white"/>
+                    <ellipse class="svg-region" data-region="1" cx="145" cy="80" rx="28" ry="25" transform="rotate(45 145 80)" fill="white"/>
+                    <ellipse class="svg-region" data-region="1" cx="65" cy="130" rx="28" ry="25" transform="rotate(-20 65 130)" fill="white"/>
+                    <ellipse class="svg-region" data-region="1" cx="135" cy="130" rx="28" ry="25" transform="rotate(20 135 130)" fill="white"/>
+                    <circle class="svg-region" data-region="2" cx="100" cy="95" r="22" fill="white"/>
+                    <path class="svg-region" data-region="3" d="M95 115 L95 185 L105 185 L105 115" fill="white"/>
+                    <text class="region-number" x="92" y="50">1</text>
+                    <text class="region-number" x="92" y="100">2</text>
+                    <text class="region-number" x="92" y="160">3</text>
+                </svg>`
+            },
+            {
+                name: "Butterfly",
+                colours: ["#9B59B6", "#E74C3C", "#3498DB"],
+                colourNames: ["Purple", "Red", "Blue"],
+                svg: `<svg viewBox="0 0 200 200">
+                    <ellipse class="svg-region" data-region="1" cx="55" cy="70" rx="40" ry="35" fill="white"/>
+                    <ellipse class="svg-region" data-region="1" cx="145" cy="70" rx="40" ry="35" fill="white"/>
+                    <ellipse class="svg-region" data-region="2" cx="50" cy="130" rx="32" ry="28" fill="white"/>
+                    <ellipse class="svg-region" data-region="2" cx="150" cy="130" rx="32" ry="28" fill="white"/>
+                    <ellipse class="svg-region" data-region="3" cx="100" cy="100" rx="10" ry="45" fill="white"/>
+                    <circle cx="100" cy="50" r="8" fill="#333"/>
+                    <path d="M95 45 Q80 25 75 18" stroke="#333" stroke-width="2" fill="none"/>
+                    <path d="M105 45 Q120 25 125 18" stroke="#333" stroke-width="2" fill="none"/>
+                    <text class="region-number" x="47" y="75">1</text>
+                    <text class="region-number" x="137" y="75">1</text>
+                    <text class="region-number" x="42" y="135">2</text>
+                    <text class="region-number" x="142" y="135">2</text>
+                    <text class="region-number" x="92" y="105">3</text>
+                </svg>`
+            },
+            {
+                name: "House",
+                colours: ["#E74C3C", "#F5CBA7", "#8B4513", "#87CEEB"],
+                colourNames: ["Red", "Cream", "Brown", "Blue"],
+                svg: `<svg viewBox="0 0 200 200">
+                    <path class="svg-region" data-region="1" d="M25 95 L100 30 L175 95 Z" fill="white"/>
+                    <rect class="svg-region" data-region="2" x="45" y="95" width="110" height="85" fill="white"/>
+                    <rect class="svg-region" data-region="3" x="82" y="125" width="36" height="55" fill="white"/>
+                    <rect class="svg-region" data-region="4" x="55" y="105" width="22" height="22" fill="white"/>
+                    <rect class="svg-region" data-region="4" x="123" y="105" width="22" height="22" fill="white"/>
+                    <text class="region-number" x="92" y="75">1</text>
+                    <text class="region-number" x="60" y="170">2</text>
+                    <text class="region-number" x="92" y="155">3</text>
+                    <text class="region-number" x="60" y="120">4</text>
+                    <text class="region-number" x="128" y="120">4</text>
+                </svg>`
+            },
+            {
+                name: "Cat",
+                colours: ["#FF8C00", "#FFE4B5", "#FF69B4", "#333333"],
+                colourNames: ["Orange", "Cream", "Pink", "Black"],
+                svg: `<svg viewBox="0 0 200 200">
+                    <ellipse class="svg-region" data-region="1" cx="100" cy="125" rx="55" ry="45" fill="white"/>
+                    <circle class="svg-region" data-region="2" cx="100" cy="70" r="38" fill="white"/>
+                    <path class="svg-region" data-region="1" d="M62 42 L52 10 L82 38 Z" fill="white"/>
+                    <path class="svg-region" data-region="1" d="M138 42 L148 10 L118 38 Z" fill="white"/>
+                    <ellipse class="svg-region" data-region="3" cx="100" cy="80" rx="8" ry="5" fill="white"/>
+                    <path class="svg-region" data-region="4" d="M145 140 Q175 145 170 175 Q150 172 145 140" fill="white"/>
+                    <circle cx="82" cy="62" r="5" fill="#333"/>
+                    <circle cx="118" cy="62" r="5" fill="#333"/>
+                    <text class="region-number" x="55" y="140">1</text>
+                    <text class="region-number" x="92" y="65">2</text>
+                    <text class="region-number" x="92" y="83">3</text>
+                    <text class="region-number" x="152" y="162">4</text>
+                </svg>`
+            },
+            {
+                name: "Rocket",
+                colours: ["#E74C3C", "#3498DB", "#F39C12", "#ECF0F1"],
+                colourNames: ["Red", "Blue", "Orange", "White"],
+                svg: `<svg viewBox="0 0 200 200">
+                    <path class="svg-region" data-region="1" d="M100 10 L125 70 L125 140 L75 140 L75 70 Z" fill="white"/>
+                    <path class="svg-region" data-region="2" d="M75 110 L45 155 L75 140 Z" fill="white"/>
+                    <path class="svg-region" data-region="2" d="M125 110 L155 155 L125 140 Z" fill="white"/>
+                    <path class="svg-region" data-region="3" d="M85 140 L100 185 L115 140 Z" fill="white"/>
+                    <ellipse class="svg-region" data-region="4" cx="100" cy="85" rx="18" ry="22" fill="white"/>
+                    <text class="region-number" x="92" y="55">1</text>
+                    <text class="region-number" x="52" y="140">2</text>
+                    <text class="region-number" x="132" y="140">2</text>
+                    <text class="region-number" x="92" y="168">3</text>
+                    <text class="region-number" x="92" y="90">4</text>
+                </svg>`
+            },
+            {
+                name: "Cupcake",
+                colours: ["#FF69B4", "#DEB887", "#FF1493", "#87CEEB", "#FFFACD"],
+                colourNames: ["Pink", "Tan", "Magenta", "Blue", "Cream"],
+                svg: `<svg viewBox="0 0 200 200">
+                    <path class="svg-region" data-region="1" d="M50 95 Q50 45 100 35 Q150 45 150 95 Q125 105 100 100 Q75 105 50 95" fill="white"/>
+                    <path class="svg-region" data-region="2" d="M55 100 L72 175 L128 175 L145 100 Q120 110 100 105 Q80 110 55 100" fill="white"/>
+                    <circle class="svg-region" data-region="3" cx="100" cy="30" r="14" fill="white"/>
+                    <circle class="svg-region" data-region="4" cx="72" cy="70" r="10" fill="white"/>
+                    <circle class="svg-region" data-region="5" cx="128" cy="70" r="10" fill="white"/>
+                    <text class="region-number" x="92" y="80">1</text>
+                    <text class="region-number" x="92" y="145">2</text>
+                    <text class="region-number" x="92" y="35">3</text>
+                    <text class="region-number" x="65" y="75">4</text>
+                    <text class="region-number" x="121" y="75">5</text>
+                </svg>`
+            },
+            {
+                name: "Unicorn",
+                colours: ["#DDA0DD", "#FFB6C1", "#FFD700", "#E6E6FA", "#98FB98"],
+                colourNames: ["Plum", "Pink", "Gold", "Lavender", "Mint"],
+                svg: `<svg viewBox="0 0 200 200">
+                    <ellipse class="svg-region" data-region="1" cx="100" cy="130" rx="50" ry="38" fill="white"/>
+                    <ellipse class="svg-region" data-region="2" cx="68" cy="82" rx="32" ry="28" fill="white"/>
+                    <path class="svg-region" data-region="3" d="M55 60 L68 12 L80 60 Z" fill="white"/>
+                    <path class="svg-region" data-region="4" d="M88 80 Q100 60 120 72 Q130 82 120 92 Q102 98 88 80" fill="white"/>
+                    <path class="svg-region" data-region="5" d="M142 145 Q175 138 172 168 Q155 178 142 155" fill="white"/>
+                    <circle cx="55" cy="75" r="4" fill="#333"/>
+                    <text class="region-number" x="92" y="140">1</text>
+                    <text class="region-number" x="60" y="87">2</text>
+                    <text class="region-number" x="60" y="45">3</text>
+                    <text class="region-number" x="100" y="82">4</text>
+                    <text class="region-number" x="152" y="160">5</text>
+                </svg>`
+            },
+            {
+                name: "Robot",
+                colours: ["#708090", "#00CED1", "#FF6347", "#FFD700", "#32CD32", "#C0C0C0"],
+                colourNames: ["Slate", "Cyan", "Red", "Gold", "Lime", "Silver"],
+                svg: `<svg viewBox="0 0 200 200">
+                    <rect class="svg-region" data-region="1" x="60" y="45" width="80" height="55" rx="8" fill="white"/>
+                    <rect class="svg-region" data-region="2" x="50" y="110" width="100" height="65" rx="5" fill="white"/>
+                    <rect class="svg-region" data-region="3" x="72" y="58" width="18" height="18" rx="3" fill="white"/>
+                    <rect class="svg-region" data-region="4" x="110" y="58" width="18" height="18" rx="3" fill="white"/>
+                    <rect class="svg-region" data-region="5" x="85" y="130" width="30" height="25" rx="5" fill="white"/>
+                    <rect class="svg-region" data-region="6" x="30" y="120" width="15" height="40" rx="3" fill="white"/>
+                    <rect class="svg-region" data-region="6" x="155" y="120" width="15" height="40" rx="3" fill="white"/>
+                    <line x1="100" y1="25" x2="100" y2="45" stroke="#333" stroke-width="3"/>
+                    <circle cx="100" cy="20" r="8" fill="#FF6347" stroke="#333" stroke-width="2"/>
+                    <text class="region-number" x="92" y="80">1</text>
+                    <text class="region-number" x="70" y="155">2</text>
+                    <text class="region-number" x="75" y="72">3</text>
+                    <text class="region-number" x="113" y="72">4</text>
+                    <text class="region-number" x="93" y="147">5</text>
+                    <text class="region-number" x="30" y="145">6</text>
+                    <text class="region-number" x="155" y="145">6</text>
+                </svg>`
+            },
+            {
+                name: "Owl",
+                colours: ["#8B4513", "#DEB887", "#FFD700", "#FF8C00", "#2F4F4F", "#FAEBD7"],
+                colourNames: ["Brown", "Tan", "Gold", "Orange", "Dark Teal", "Cream"],
+                svg: `<svg viewBox="0 0 200 200">
+                    <ellipse class="svg-region" data-region="1" cx="100" cy="115" rx="52" ry="55" fill="white"/>
+                    <path class="svg-region" data-region="2" d="M48 68 L32 28 L72 58 Z" fill="white"/>
+                    <path class="svg-region" data-region="2" d="M152 68 L168 28 L128 58 Z" fill="white"/>
+                    <circle class="svg-region" data-region="3" cx="75" cy="90" r="20" fill="white"/>
+                    <circle class="svg-region" data-region="3" cx="125" cy="90" r="20" fill="white"/>
+                    <circle class="svg-region" data-region="4" cx="75" cy="90" r="10" fill="white"/>
+                    <circle class="svg-region" data-region="4" cx="125" cy="90" r="10" fill="white"/>
+                    <path class="svg-region" data-region="5" d="M90 115 L100 130 L110 115 Z" fill="white"/>
+                    <ellipse class="svg-region" data-region="6" cx="100" cy="150" rx="25" ry="15" fill="white"/>
+                    <text class="region-number" x="60" y="140">1</text>
+                    <text class="region-number" x="42" y="52">2</text>
+                    <text class="region-number" x="145" y="52">2</text>
+                    <text class="region-number" x="62" y="88">3</text>
+                    <text class="region-number" x="112" y="88">3</text>
+                    <text class="region-number" x="68" y="95">4</text>
+                    <text class="region-number" x="118" y="95">4</text>
+                    <text class="region-number" x="92" y="125">5</text>
+                    <text class="region-number" x="92" y="155">6</text>
+                </svg>`
+            },
+            {
+                name: "Castle",
+                colours: ["#A0522D", "#708090", "#4169E1", "#FFD700", "#DC143C", "#C0C0C0", "#8B0000"],
+                colourNames: ["Sienna", "Slate", "Blue", "Gold", "Crimson", "Silver", "Dark Red"],
+                svg: `<svg viewBox="0 0 200 200">
+                    <rect class="svg-region" data-region="1" x="45" y="85" width="110" height="95" fill="white"/>
+                    <rect class="svg-region" data-region="2" x="32" y="60" width="28" height="35" fill="white"/>
+                    <rect class="svg-region" data-region="2" x="140" y="60" width="28" height="35" fill="white"/>
+                    <path class="svg-region" data-region="3" d="M82 85 L100 45 L118 85 Z" fill="white"/>
+                    <rect class="svg-region" data-region="4" x="88" y="130" width="24" height="50" rx="12" fill="white"/>
+                    <rect class="svg-region" data-region="5" x="55" y="100" width="18" height="22" fill="white"/>
+                    <rect class="svg-region" data-region="5" x="127" y="100" width="18" height="22" fill="white"/>
+                    <rect class="svg-region" data-region="6" x="32" y="50" width="8" height="12" fill="white"/>
+                    <rect class="svg-region" data-region="6" x="52" y="50" width="8" height="12" fill="white"/>
+                    <rect class="svg-region" data-region="6" x="140" y="50" width="8" height="12" fill="white"/>
+                    <rect class="svg-region" data-region="6" x="160" y="50" width="8" height="12" fill="white"/>
+                    <circle class="svg-region" data-region="7" cx="100" cy="62" r="8" fill="white"/>
+                    <text class="region-number" x="70" y="155">1</text>
+                    <text class="region-number" x="38" y="82">2</text>
+                    <text class="region-number" x="146" y="82">2</text>
+                    <text class="region-number" x="92" y="75">3</text>
+                    <text class="region-number" x="93" y="158">4</text>
+                    <text class="region-number" x="57" y="115">5</text>
+                    <text class="region-number" x="129" y="115">5</text>
+                    <text class="region-number" x="38" y="48">6</text>
+                    <text class="region-number" x="92" y="67">7</text>
+                </svg>`
+            },
+            {
+                name: "Dragon",
+                colours: ["#228B22", "#32CD32", "#FFD700", "#FF4500", "#8FBC8F", "#FF6347", "#9932CC"],
+                colourNames: ["Forest", "Lime", "Gold", "Orange", "Sea Green", "Tomato", "Purple"],
+                svg: `<svg viewBox="0 0 200 200">
+                    <ellipse class="svg-region" data-region="1" cx="95" cy="120" rx="50" ry="40" fill="white"/>
+                    <ellipse class="svg-region" data-region="2" cx="55" cy="75" rx="28" ry="24" fill="white"/>
+                    <path class="svg-region" data-region="3" d="M115 90 L155 55 L172 72 L168 98 L145 94 L155 78 L135 92 Z" fill="white"/>
+                    <path class="svg-region" data-region="4" d="M35 62 L22 38 L48 52 L38 28 L58 48" fill="white"/>
+                    <path class="svg-region" data-region="5" d="M140 138 Q182 128 175 165 Q158 175 140 152" fill="white"/>
+                    <circle class="svg-region" data-region="6" cx="45" cy="68" r="8" fill="white"/>
+                    <path class="svg-region" data-region="7" d="M28 85 L18 98 L28 90 L22 102 L32 92" fill="white"/>
+                    <text class="region-number" x="87" y="130">1</text>
+                    <text class="region-number" x="47" y="80">2</text>
+                    <text class="region-number" x="145" y="78">3</text>
+                    <text class="region-number" x="32" y="48">4</text>
+                    <text class="region-number" x="155" y="155">5</text>
+                    <text class="region-number" x="38" y="72">6</text>
+                    <text class="region-number" x="15" y="95">7</text>
+                </svg>`
+            }
+        ];
+
+        // Generate unique math question based on level
+        function generateQuestion(level) {
+            let num1, num2, operator, answer;
+            let maxAttempts = 100;
+            let attempts = 0;
+            let questionKey;
+            
+            do {
+                // Progressive difficulty - steeper curve
+                if (level === 1) {
+                    num1 = Math.floor(Math.random() * 5) + 1;
+                    num2 = Math.floor(Math.random() * 5) + 1;
+                    operator = '+';
+                    answer = num1 + num2;
+                } else if (level === 2) {
+                    num1 = Math.floor(Math.random() * 8) + 1;
+                    num2 = Math.floor(Math.random() * (10 - num1)) + 1;
+                    operator = '+';
+                    answer = num1 + num2;
+                } else if (level === 3) {
+                    num1 = Math.floor(Math.random() * 10) + 1;
+                    num2 = Math.floor(Math.random() * 10) + 1;
+                    operator = '+';
+                    answer = num1 + num2;
+                } else if (level === 4) {
+                    num1 = Math.floor(Math.random() * 8) + 3;
+                    num2 = Math.floor(Math.random() * (num1 - 1)) + 1;
+                    operator = '−';
+                    answer = num1 - num2;
+                } else if (level === 5) {
+                    num1 = Math.floor(Math.random() * 10) + 3;
+                    num2 = Math.floor(Math.random() * (num1 - 1)) + 1;
+                    operator = '−';
+                    answer = num1 - num2;
+                } else if (level === 6) {
+                    operator = Math.random() < 0.5 ? '+' : '−';
+                    if (operator === '+') {
+                        num1 = Math.floor(Math.random() * 10) + 1;
+                        num2 = Math.floor(Math.random() * (12 - num1)) + 1;
+                        answer = num1 + num2;
+                    } else {
+                        num1 = Math.floor(Math.random() * 10) + 3;
+                        num2 = Math.floor(Math.random() * (num1 - 1)) + 1;
+                        answer = num1 - num2;
+                    }
+                } else if (level === 7) {
+                    operator = Math.random() < 0.5 ? '+' : '−';
+                    if (operator === '+') {
+                        num1 = Math.floor(Math.random() * 12) + 1;
+                        num2 = Math.floor(Math.random() * (15 - num1)) + 1;
+                        answer = num1 + num2;
+                    } else {
+                        num1 = Math.floor(Math.random() * 12) + 4;
+                        num2 = Math.floor(Math.random() * (num1 - 1)) + 1;
+                        answer = num1 - num2;
+                    }
+                } else if (level === 8) {
+                    operator = Math.random() < 0.5 ? '+' : '−';
+                    if (operator === '+') {
+                        num1 = Math.floor(Math.random() * 14) + 1;
+                        num2 = Math.floor(Math.random() * (18 - num1)) + 1;
+                        answer = num1 + num2;
+                    } else {
+                        num1 = Math.floor(Math.random() * 14) + 5;
+                        num2 = Math.floor(Math.random() * (num1 - 1)) + 1;
+                        answer = num1 - num2;
+                    }
+                } else {
+                    operator = Math.random() < 0.5 ? '+' : '−';
+                    if (operator === '+') {
+                        num1 = Math.floor(Math.random() * 15) + 1;
+                        num2 = Math.floor(Math.random() * (20 - num1)) + 1;
+                        answer = num1 + num2;
+                    } else {
+                        num1 = Math.floor(Math.random() * 15) + 6;
+                        num2 = Math.floor(Math.random() * (num1 - 1)) + 1;
+                        answer = num1 - num2;
+                    }
+                }
+                
+                questionKey = `${num1}${operator}${num2}`;
+                attempts++;
+            } while (askedQuestions.has(questionKey) && attempts < maxAttempts);
+            
+            askedQuestions.add(questionKey);
+            
+            return { num1, num2, operator, answer };
+        }
+
+        // Show screen
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            
+            if (screenId === 'level-screen') {
+                renderLevelGrid();
+            }
+        }
+
+        // Render level grid
+        function renderLevelGrid() {
+            const grid = document.getElementById('level-grid');
+            grid.innerHTML = '';
+            
+            const maxLevel = Math.max(1, ...Object.keys(levelProgress).map(Number), 1);
+            const unlockedUpTo = Math.min(maxLevel + 1, pictures.length);
+
+            for (let i = 1; i <= pictures.length; i++) {
+                const btn = document.createElement('button');
+                btn.className = 'level-btn ' + (i <= unlockedUpTo ? 'unlocked' : 'locked');
+                btn.innerHTML = `${i}<div class="stars">${getStarsHTML(levelProgress[i] || 0)}</div>`;
+                
+                if (i <= unlockedUpTo) {
+                    btn.onclick = () => startLevel(i);
+                }
+                
+                grid.appendChild(btn);
+            }
+        }
+
+        function getStarsHTML(stars) {
+            let html = '';
+            for (let i = 0; i < 3; i++) {
+                html += i < stars ? '⭐' : '☆';
+            }
+            return html;
+        }
+
+        // Start level
+        function startLevel(level) {
+            initAudio();
+            currentLevel = level;
+            currentQuestion = 0;
+            mistakes = 0;
+            correctAnswers = 0;
+            unlockedColours = [];
+            askedQuestions.clear();
+            questionResults = [];
+            regionFillCount = {};
+            
+            const picture = pictures[currentLevel - 1];
+            
+            document.getElementById('current-level').textContent = level;
+            document.getElementById('picture-name').textContent = picture.name;
+            document.getElementById('mistakes-counter').textContent = 'Mistakes: 0';
+            
+            const colourCount = picture.colours.length;
+            document.getElementById('colours-to-unlock').textContent = 
+                `🎨 ${colourCount} colour${colourCount > 1 ? 's' : ''} to unlock`;
+            
+            const timerContainer = document.getElementById('timer-container');
+            timerContainer.style.display = level >= 10 ? 'block' : 'none';
+            
+            showScreen('question-screen');
+            showQuestion();
+        }
+
+        // Show question
+        function showQuestion() {
+            const picture = pictures[currentLevel - 1];
+            const question = generateQuestion(currentLevel);
+            
+            window.currentQuestionData = question;
+            
+            document.getElementById('question-text').textContent = 
+                `${question.num1} ${question.operator} ${question.num2} = ?`;
+            
+            document.getElementById('question-num').textContent = currentQuestion + 1;
+            
+            const colourPreviewContainer = document.getElementById('colour-preview-container');
+            const allUnlockedMsg = document.getElementById('all-unlocked-msg');
+            
+            if (unlockedColours.length < picture.colours.length) {
+                colourPreviewContainer.style.display = 'block';
+                allUnlockedMsg.style.display = 'none';
+                const colourPreview = document.getElementById('colour-preview');
+                colourPreview.style.backgroundColor = picture.colours[unlockedColours.length];
+            } else {
+                colourPreviewContainer.style.display = 'none';
+                allUnlockedMsg.style.display = 'block';
+            }
+            
+            renderProgressBar();
+            
+            const input = document.getElementById('answer-input');
+            input.value = '';
+            input.focus();
+            
+            if (currentLevel >= 10) {
+                startTimer();
+            }
+        }
+
+        function renderProgressBar() {
+            const bar = document.getElementById('progress-bar');
+            bar.innerHTML = '';
+            
+            for (let i = 0; i < 5; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'progress-dot';
+                
+                if (i < currentQuestion) {
+                    const wasCorrect = questionResults[i];
+                    dot.className += wasCorrect ? ' correct' : ' wrong';
+                    dot.textContent = wasCorrect ? '✓' : '✗';
+                } else if (i === currentQuestion) {
+                    dot.className += ' current';
+                    dot.textContent = i + 1;
+                } else {
+                    dot.textContent = i + 1;
+                }
+                
+                bar.appendChild(dot);
+            }
+        }
+
+        // Timer
+        function startTimer() {
+            const baseTime = Math.max(10, 15 - (currentLevel - 10));
+            timeLeft = baseTime;
+            updateTimerDisplay(baseTime);
+            
+            if (timerInterval) clearInterval(timerInterval);
+            
+            timerInterval = setInterval(() => {
+                timeLeft -= 0.1;
+                updateTimerDisplay(baseTime);
+                
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    submitAnswer(true);
+                }
+            }, 100);
+        }
+
+        function updateTimerDisplay(baseTime) {
+            const fill = document.getElementById('timer-fill');
+            const percentage = (timeLeft / baseTime) * 100;
+            fill.style.width = percentage + '%';
+            
+            fill.className = 'timer-fill';
+            if (timeLeft <= baseTime * 0.33) fill.className += ' danger';
+            else if (timeLeft <= baseTime * 0.66) fill.className += ' warning';
+        }
+
+        // Submit answer
+        function submitAnswer(timeout = false) {
+            if (timerInterval) clearInterval(timerInterval);
+            
+            const input = document.getElementById('answer-input');
+            const userAnswer = parseInt(input.value);
+            const correct = !timeout && userAnswer === window.currentQuestionData.answer;
+            const picture = pictures[currentLevel - 1];
+            
+            questionResults.push(correct);
+            
+            if (correct) {
+                playSound('correct');
+                showFeedback('✓', '#4CAF50');
+                correctAnswers++;
+                if (unlockedColours.length < picture.colours.length) {
+                    unlockedColours.push(unlockedColours.length);
+                }
+            } else {
+                playSound('wrong');
+                showFeedback('✗', '#f44336');
+                mistakes++;
+                document.getElementById('mistakes-counter').textContent = 'Mistakes: ' + mistakes;
+            }
+            
+            currentQuestion++;
+            
+            setTimeout(() => {
+                if (currentQuestion < 5) {
+                    showQuestion();
+                } else {
+                    startColouring();
+                }
+            }, 1000);
+        }
+
+        function showFeedback(icon, color) {
+            const overlay = document.getElementById('feedback-overlay');
+            const iconEl = document.getElementById('feedback-icon');
+            iconEl.textContent = icon;
+            iconEl.style.color = color;
+            overlay.classList.add('show');
+            
+            setTimeout(() => overlay.classList.remove('show'), 800);
+        }
+
+        // Colouring phase
+        function startColouring() {
+            const picture = pictures[currentLevel - 1];
+            
+            availableColours = [...unlockedColours];
+            selectedColour = null;
+            regionFillCount = {};
+            
+            document.getElementById('colouring-picture-name').textContent = picture.name;
+            
+            const area = document.getElementById('colouring-area');
+            area.innerHTML = picture.svg;
+            
+            // Count total regions for each colour number
+            const regionTotals = {};
+            area.querySelectorAll('.svg-region').forEach(region => {
+                const regionNum = parseInt(region.dataset.region);
+                regionTotals[regionNum] = (regionTotals[regionNum] || 0) + 1;
+                regionFillCount[regionNum] = 0;
+            });
+            window.regionTotals = regionTotals;
+            
+            // Add click handlers to regions
+            area.querySelectorAll('.svg-region').forEach(region => {
+                region.addEventListener('click', () => paintRegion(region));
+            });
+            
+            renderPalette();
+            
+            document.getElementById('done-btn').style.display = 'none';
+            document.getElementById('all-coloured-container').innerHTML = '';
+            
+            if (unlockedColours.length === 0) {
+                document.getElementById('all-coloured-container').innerHTML = 
+                    '<div class="all-coloured-msg warning">😢 No colours unlocked. Try again for better results!</div>';
+                document.getElementById('done-btn').style.display = 'inline-block';
+            }
+            
+            showScreen('colouring-screen');
+        }
+
+        function renderPalette() {
+            const picture = pictures[currentLevel - 1];
+            const palette = document.getElementById('colour-palette');
+            palette.innerHTML = '';
+            
+            availableColours.forEach((colourIndex) => {
+                const btn = document.createElement('button');
+                btn.className = 'colour-btn';
+                btn.style.backgroundColor = picture.colours[colourIndex];
+                btn.innerHTML = `<span class="number">${colourIndex + 1}</span>`;
+                btn.dataset.colourIndex = colourIndex;
+                btn.onclick = () => selectColour(colourIndex, btn);
+                palette.appendChild(btn);
+            });
+            
+            if (availableColours.length === 0 && unlockedColours.length > 0) {
+                palette.innerHTML = '<p style="color: #4CAF50; font-weight: bold;">All colours used! 🎨</p>';
+            }
+        }
+
+        function selectColour(index, btn) {
+            document.querySelectorAll('.colour-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            selectedColour = index;
+            playSound('paint');
+        }
+
+        function paintRegion(region) {
+            if (selectedColour === null) return;
+            if (region.classList.contains('filled')) return;
+            
+            const picture = pictures[currentLevel - 1];
+            const regionNum = parseInt(region.dataset.region);
+            
+            // Check if the colour matches the region number
+            if (selectedColour + 1 !== regionNum) {
+                return;
+            }
+            
+            // Paint just THIS region (not all with same number)
+            region.style.fill = picture.colours[selectedColour];
+            region.classList.add('filled');
+            playSound('paint');
+            
+            // Track how many of this region number are filled
+            regionFillCount[regionNum] = (regionFillCount[regionNum] || 0) + 1;
+            
+            // Check if ALL regions of this number are now filled
+            if (regionFillCount[regionNum] >= window.regionTotals[regionNum]) {
+                // Hide all number labels for this region
+                const area = document.getElementById('colouring-area');
+                area.querySelectorAll('.region-number').forEach(num => {
+                    if (num.textContent == regionNum) {
+                        num.classList.add('hidden');
+                    }
+                });
+                
+                // Remove colour from palette (all regions of this colour are done)
+                availableColours = availableColours.filter(c => c !== selectedColour);
+                selectedColour = null;
+                renderPalette();
+            }
+            
+            checkColouringComplete();
+        }
+
+        function checkColouringComplete() {
+            if (availableColours.length === 0) {
+                const picture = pictures[currentLevel - 1];
+                const allColoursUnlocked = unlockedColours.length === picture.colours.length;
+                
+                if (allColoursUnlocked) {
+                    document.getElementById('all-coloured-container').innerHTML = 
+                        '<div class="all-coloured-msg">🎨 Perfect! All colours applied!</div>';
+                } else {
+                    document.getElementById('all-coloured-container').innerHTML = 
+                        `<div class="all-coloured-msg warning">🎨 You unlocked ${unlockedColours.length} of ${picture.colours.length} colours. Try again for a complete picture!</div>`;
+                }
+                document.getElementById('done-btn').style.display = 'inline-block';
+            }
+        }
+
+        function finishColouring() {
+            playSound('complete');
+            
+            let stars = 0;
+            if (mistakes === 0) stars = 3;
+            else if (mistakes === 1) stars = 2;
+            else if (mistakes === 2) stars = 1;
+            
+            levelProgress[currentLevel] = Math.max(levelProgress[currentLevel] || 0, stars);
+            localStorage.setItem('mathByColour_progress', JSON.stringify(levelProgress));
+            
+            showCelebration(stars);
+        }
+
+        function showCelebration(stars) {
+            const picture = pictures[currentLevel - 1];
+            
+            const completedImage = document.getElementById('completed-image');
+            completedImage.innerHTML = document.getElementById('colouring-area').innerHTML;
+            
+            completedImage.querySelectorAll('.region-number').forEach(n => n.style.display = 'none');
+            
+            const starsDisplay = document.getElementById('stars-display');
+            const starSpans = starsDisplay.querySelectorAll('.star');
+            starSpans.forEach((span, i) => {
+                span.classList.remove('earned');
+                if (i < stars) {
+                    setTimeout(() => span.classList.add('earned'), 300 * (i + 1));
+                }
+            });
+            
+            let message = '';
+            if (stars === 3) {
+                message = "PERFECT! Amazing job, Alina! 🎉🌟";
+            } else if (stars === 2) {
+                message = "Great work! Almost perfect! ⭐⭐";
+            } else if (stars === 1) {
+                message = "Good job! Try again for more stars! 🌟";
+            } else {
+                message = "Keep practicing! You'll get more stars next time! 💪";
+            }
+            
+            document.getElementById('completion-message').textContent = message;
+            
+            showScreen('celebration-screen');
+        }
+
+        function nextLevel() {
+            if (currentLevel < pictures.length) {
+                startLevel(currentLevel + 1);
+            } else {
+                alert("Congratulations Alina! You've completed all levels! 🎉");
+                showScreen('level-screen');
+            }
+        }
+
+        // Save image
+        function saveImage() {
+            const svgElement = document.querySelector('#completed-image svg');
+            const picture = pictures[currentLevel - 1];
+            
+            const clonedSvg = svgElement.cloneNode(true);
+            clonedSvg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+            
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 400;
+            canvas.height = 400;
+            
+            const svgData = new XMLSerializer().serializeToString(clonedSvg);
+            const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+            const url = URL.createObjectURL(svgBlob);
+            
+            const img = new Image();
+            img.onload = function() {
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0, 400, 400);
+                
+                URL.revokeObjectURL(url);
+                
+                try {
+                    canvas.toBlob(function(blob) {
+                        if (blob) {
+                            const link = document.createElement('a');
+                            link.download = `alina-${picture.name.toLowerCase()}-level${currentLevel}.png`;
+                            link.href = URL.createObjectURL(blob);
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            URL.revokeObjectURL(link.href);
+                        }
+                    }, 'image/png');
+                } catch(e) {
+                    const dataUrl = canvas.toDataURL('image/png');
+                    const link = document.createElement('a');
+                    link.download = `alina-${picture.name.toLowerCase()}-level${currentLevel}.png`;
+                    link.href = dataUrl;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }
+            };
+            
+            img.onerror = function() {
+                alert('Could not save image. Try downloading from a web browser.');
+            };
+            
+            img.src = url;
+        }
+
+        // Keyboard support
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && document.getElementById('question-screen').classList.contains('active')) {
+                submitAnswer();
+            }
+        });
+
+        // Initialize
+        renderLevelGrid();
+    </script>
+</body>
+</html>
