@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Colour by Hang Man</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        body {
+            font-family: 'Fredoka', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        /* Floating Decorations */
+        .decoration {
+            position: fixed;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.6;
+            animation: float 6s ease-in-out infinite;
+        }
+        .d1 { top: 10%; left: 5%; font-size: 2rem; animation-delay: 0s; }
+        .d2 { top: 20%; right: 10%; font-size: 3rem; animation-delay: 2s; }
+        .d3 { bottom: 15%; left: 15%; font-size: 2.5rem; animation-delay: 4s; }
+        .d4 { bottom: 10%; right: 5%; font-size: 2rem; animation-delay: 1s; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(10deg); }
+        }
+
+        /* Main Container */
+        .game-container {
+            background: linear-gradient(145deg, #ffffff 0%, #fff5f5 100%);
+            border-radius: 30px;
+            padding: 30px;
+            width: 100%;
+            max-width: 800px;
+            height: 90vh;
+            max-height: 850px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3), 0 0 0 4px rgba(255,255,255,0.3);
+            position: relative;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        /* Screens */
+        .screen {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+            animation: fadeIn 0.4s ease-out;
+        }
+        .screen.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Typography */
+        h1 {
+            font-size: 2.8rem;
+            text-align: center;
+            background: linear-gradient(90deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3, #54a0ff, #5f27cd);
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+            animation: rainbow 4s linear infinite;
+        }
+
+        @keyframes rainbow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        h2 {
+            color: #5f27cd;
+            text-align: center;
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+        }
+
+        .subtitle {
+            color: #888;
+            font-size: 1.2em;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        /* Buttons */
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.3em;
+            border-radius: 50px;
+            font-family: 'Fredoka', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            margin: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .btn:hover, .btn:active {
+            transform: scale(1.08) translateY(-3px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.5);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            box-shadow: 0 4px 15px rgba(79, 172, 254, 0.4);
+        }
+        .btn-secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            box-shadow: 0 4px 15px rgba(240, 147, 251, 0.4);
+        }
+
+        .nav-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 0 10px;
+        }
+
+        .nav-btn {
+            padding: 8px 16px;
+            border-radius: 20px;
+            background: rgba(95, 39, 205, 0.1);
+            color: #5f27cd;
+            border: none;
+            cursor: pointer;
+            font-family: 'Fredoka', sans-serif;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        .nav-btn:hover {
+            background: rgba(95, 39, 205, 0.2);
+            transform: scale(1.05);
+        }
+
+        .home-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #5f27cd;
+            text-decoration: none;
+            font-size: 1.1em;
+            font-weight: 500;
+            margin-bottom: 15px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            background: rgba(95, 39, 205, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .home-link:hover {
+            background: rgba(95, 39, 205, 0.2);
+            transform: translateX(-5px);
+        }
+
+        /* Level Grid */
+        .level-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+            gap: 15px;
+            padding: 10px;
+            overflow-y: auto;
+        }
+        .level-btn {
+            aspect-ratio: 1;
+            background: linear-gradient(145deg, #ffffff, #f5f5f5);
+            border: 3px solid #ddd;
+            border-radius: 18px;
+            font-size: 1.5rem;
+            color: #764ba2;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            position: relative;
+        }
+        .level-btn.unlocked {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        }
+        .level-btn.unlocked:hover {
+            transform: scale(1.1);
+            border-color: #f093fb;
+        }
+        .level-btn.locked {
+            background: #f0f0f0;
+            color: #ccc;
+            cursor: not-allowed;
+            border-style: dashed;
+        }
+        .level-stars {
+            font-size: 0.8rem;
+            margin-top: 5px;
+            color: #ffc107;
+            min-height: 15px;
+        }
+
+        /* Game Area */
+        .health-bar {
+            display: flex;
+            gap: 5px;
+        }
+        .heart {
+            color: #ff6b6b;
+            font-size: 1.5rem;
+            transition: transform 0.3s;
+        }
+        .heart.lost {
+            color: #ddd;
+            transform: scale(0.8);
+        }
+
+        .hangman-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: white;
+            border-radius: 24px;
+            margin: 10px 0;
+            position: relative;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
+            min-height: 250px;
+        }
+        
+        #game-character-svg {
+            height: 240px;
+            max-width: 100%;
+            filter: drop-shadow(0 5px 10px rgba(0,0,0,0.1));
+        }
+        .char-path {
+            fill: none;
+            stroke: #333;
+            stroke-width: 4;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            opacity: 0.1;
+            transition: opacity 0.5s ease;
+        }
+        .char-path.revealed { opacity: 1; }
+        .char-fillable { fill: #fff; } /* Default fill for shapes */
+        .char-stroke-only { fill: none !important; } /* Ensure strokes are never filled */
+
+        .word-display {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin: 20px 0;
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #5f27cd;
+            min-height: 60px;
+            flex-wrap: wrap;
+        }
+        .letter-slot {
+            width: 50px;
+            height: 60px;
+            border-bottom: 5px solid #ddd;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-transform: uppercase;
+            transition: all 0.3s;
+        }
+        .letter-slot.filled {
+            border-color: #667eea;
+            animation: bounceIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        /* Keyboard */
+        .keyboard {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            margin-top: auto;
+            padding-bottom: 10px;
+        }
+        .key {
+            width: 40px;
+            height: 48px;
+            background: white;
+            border: 2px solid #eee;
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: #666;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #ddd;
+            transition: transform 0.1s;
+        }
+        .key:active { transform: translateY(4px); box-shadow: none; }
+        .key:hover { border-color: #667eea; color: #667eea; }
+        .key.correct { background: #4caf50; color: white; border-color: #4caf50; box-shadow: 0 4px 0 #388e3c; }
+        .key.wrong { background: #ff6b6b; color: white; border-color: #ff6b6b; box-shadow: 0 4px 0 #d32f2f; opacity: 0.6; }
+
+        /* Colouring Area */
+        .colouring-workspace {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+            margin-bottom: 15px;
+            width: 100%;
+        }
+        .palette {
+            display: flex;
+            gap: 12px;
+            padding: 15px;
+            background: white;
+            border-radius: 50px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 100%;
+        }
+        .color-swatch {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 4px solid white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            transition: transform 0.2s;
+        }
+        .color-swatch:hover { transform: scale(1.15); }
+        .color-swatch.active { transform: scale(1.2); border-color: #333; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+
+        #colouring-svg {
+            height: 320px;
+            max-width: 100%;
+            cursor: crosshair;
+        }
+        /* In colouring mode, closed paths are clickable */
+        #colouring-svg path:not(.char-stroke-only) {
+            transition: fill 0.2s, filter 0.2s;
+        }
+        #colouring-svg path:not(.char-stroke-only):hover {
+            filter: brightness(0.9);
+        }
+
+        /* Modals */
+        .modal-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(5px);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            border-radius: 30px;
+            text-align: center;
+            padding: 20px;
+        }
+        .modal-overlay.active { display: flex; animation: fadeIn 0.3s; }
+        
+        .stars-display { font-size: 4rem; margin: 20px 0; }
+        .star-anim { display: inline-block; opacity: 0; transform: scale(0); color: #ffc107; text-shadow: 0 0 20px rgba(255, 193, 7, 0.5); }
+        .star-anim.awarded { animation: starPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        
+        @keyframes starPop {
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        /* Celebration Image Container */
+        .completed-image-container {
+            border: 6px solid #ffc107;
+            border-radius: 24px;
+            padding: 20px;
+            background: white;
+            box-shadow: 0 10px 40px rgba(255, 193, 7, 0.3);
+            margin: 20px 0;
+            max-width: 300px;
+        }
+
+        .reset-link {
+            color: #999;
+            font-size: 0.9em;
+            cursor: pointer;
+            text-decoration: underline;
+            margin-top: 15px;
+            display: inline-block;
+        }
+        .reset-link:hover { color: #5f27cd; }
+
+        @media (max-width: 500px) {
+            .game-container { padding: 15px; height: 100vh; border-radius: 0; }
+            h1 { font-size: 2rem; }
+            .key { width: 32px; height: 42px; font-size: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Decorations -->
+    <div class="decoration d1">⭐</div>
+    <div class="decoration d2">🌈</div>
+    <div class="decoration d3">✨</div>
+    <div class="decoration d4">🎨</div>
+
+    <div class="game-container">
+        
+        <!-- HOME SCREEN -->
+        <div id="screen-home" class="screen active">
+            <a href="../index.html" class="home-link">← Back to All Games</a>
+            <div style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+                <h1>Colour by Hang Man</h1>
+                <p class="subtitle">Guess words, earn stars, and paint! 🌟</p>
+                <div style="font-size:5rem; margin-bottom:30px; animation: bounceIn 2s infinite;">🎨</div>
+                <button class="btn" onclick="app.showScreen('level-select')">Let's Play! 🚀</button>
+            </div>
+        </div>
+
+        <!-- LEVEL SELECT -->
+        <div id="screen-level-select" class="screen">
+            <div class="nav-bar">
+                <button class="nav-btn" onclick="app.showScreen('home')">← Back</button>
+                <h2>Choose a Level</h2>
+                <a href="../index.html" class="nav-btn">🏠</a>
+            </div>
+            <div class="level-grid" id="level-container">
+                <!-- Generated by JS -->
+            </div>
+            <div style="text-align:center; margin-top:auto;">
+                <span class="reset-link" onclick="app.resetProgress()">Reset Progress</span>
+            </div>
+        </div>
+
+        <!-- GAMEPLAY SCREEN -->
+        <div id="screen-game" class="screen">
+            <div class="nav-bar">
+                <button class="nav-btn" onclick="app.confirmExit()">← Levels</button>
+                <div class="health-bar" id="health-bar">
+                    <!-- Hearts generated by JS -->
+                </div>
+                <a href="../index.html" class="nav-btn">🏠</a>
+            </div>
+
+            <div class="hangman-container">
+                <svg id="game-character-svg" viewBox="0 0 200 200">
+                    <!-- Character paths injected here -->
+                </svg>
+            </div>
+
+            <div class="word-display" id="word-display">
+                <!-- Letter slots injected here -->
+            </div>
+
+            <div class="keyboard" id="keyboard">
+                <!-- Keys injected here -->
+            </div>
+
+            <!-- Result Modal (Win/Loss) -->
+            <div id="game-result-modal" class="modal-overlay">
+                <h2 id="result-title" style="font-size:2.5rem; color:#5f27cd;">Good Job!</h2>
+                <div class="stars-display" id="star-result">
+                    <span class="star-anim">⭐</span><span class="star-anim">⭐</span><span class="star-anim">⭐</span>
+                </div>
+                <p id="result-message" style="margin:10px; color:#666; font-size:1.2rem;">You unlocked colouring!</p>
+                <div style="margin-top:20px;">
+                    <button class="btn btn-success" id="btn-colour-reward" onclick="app.startColouring()">Colour It! 🎨</button>
+                    <button class="btn btn-secondary" onclick="app.showScreen('level-select')">Menu</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- COLOURING SCREEN -->
+        <div id="screen-colouring" class="screen">
+            <div class="nav-bar">
+                <div style="width:70px"></div>
+                <h2>Colour Your Picture! 🎨</h2>
+                <a href="../index.html" class="nav-btn">🏠</a>
+            </div>
+            
+            <div class="colouring-workspace">
+                <svg id="colouring-svg" viewBox="0 0 200 200">
+                    <!-- Coloring paths injected here -->
+                </svg>
+            </div>
+
+            <div class="palette" id="color-palette">
+                <!-- Swatches -->
+            </div>
+            
+            <div style="text-align:center;">
+                <button class="btn btn-success" onclick="app.finishColouring()">Done! ✨</button>
+            </div>
+        </div>
+
+        <!-- CELEBRATION / SAVE SCREEN -->
+        <div id="screen-celebration" class="screen">
+            <div class="nav-bar">
+                <button class="nav-btn" onclick="app.showScreen('level-select')">← Levels</button>
+                <h2>Amazing Work! 🎉</h2>
+                <a href="../index.html" class="nav-btn">🏠</a>
+            </div>
+
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                <div class="stars-display" id="celeb-stars">
+                    <!-- Stars injected here -->
+                </div>
+                
+                <div id="final-image-container" class="completed-image-container">
+                    <!-- Final SVG injected here for display -->
+                </div>
+
+                <div style="margin-top:20px; display:flex; flex-wrap:wrap; justify-content:center;">
+                    <button class="btn" onclick="app.saveImage()">Save Picture 📸</button>
+                    <button class="btn btn-success" onclick="app.nextLevel()">Next Level →</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- GAME DATA ---
+
+        const WORDS = {
+            easy: ["CAT", "DOG", "SUN", "BUS", "HAT", "PEN", "CUP", "BOX", "BED", "CAR", "FOX", "PIG", "BUG", "MAP", "TOY"],
+            medium: ["FROG", "JUMP", "BOOK", "CAKE", "TREE", "MILK", "SWIM", "BIRD", "FISH", "STAR", "BLUE", "LION", "DUCK", "KITE", "MOON"],
+            hard: ["SCHOOL", "FRIEND", "PURPLE", "MONKEY", "PENCIL", "FLOWER", "BANANA", "ORANGE", "DOCTOR", "POLICE", "YELLOW", "RABBIT", "GARDEN", "FAMILY", "TABLE"]
+        };
+
+        const COLORS = [
+            "#ff6b6b", "#feca57", "#48dbfb", "#ff9ff3", "#54a0ff", 
+            "#5f27cd", "#48c9b0", "#e1b12c", "#c23616", "#192a56",
+            "#ffffff", "#2f3640", "#e84118", "#0097e6", "#8c7ae6"
+        ];
+
+        // --- SVG ASSETS ---
+        // Paths with 'stroke: true' will be rendered as lines in colouring mode and cannot be filled.
+        const CHARACTERS = [
+            // 1. Bear
+            {
+                name: "Bear",
+                viewBox: "0 0 200 200",
+                paths: [
+                    { d: "M60 140 A40 40 0 0 1 140 140 L140 190 L60 190 Z", fill: "#e0ac69" }, // Body
+                    { d: "M50 70 A50 50 0 0 1 150 70 A50 50 0 0 1 50 70", fill: "#e0ac69" }, // Head
+                    { d: "M40 140 L20 120", stroke: true }, // L Arm
+                    { d: "M160 140 L180 120", stroke: true }, // R Arm
+                    { d: "M70 190 L70 200", stroke: true }, // L Leg
+                    { d: "M130 190 L130 200", stroke: true }, // R Leg
+                    { d: "M80 60 A5 5 0 0 1 90 60 A5 5 0 0 1 80 60", fill: "#333" }, // L Eye
+                    { d: "M110 60 A5 5 0 0 1 120 60 A5 5 0 0 1 110 60", fill: "#333" }, // R Eye
+                    { d: "M90 85 Q100 95 110 85", stroke: true }, // Mouth
+                    { d: "M40 40 A15 15 0 0 1 70 40", fill: "#e0ac69" } // Ear
+                ]
+            },
+            // 2. Robot
+            {
+                name: "Robot",
+                viewBox: "0 0 200 200",
+                paths: [
+                    { d: "M60 90 L140 90 L140 160 L60 160 Z", fill: "#aaa" }, // Body
+                    { d: "M70 30 L130 30 L130 80 L70 80 Z", fill: "#aaa" }, // Head
+                    { d: "M60 100 L30 120", stroke: true }, // L Arm
+                    { d: "M140 100 L170 120", stroke: true }, // R Arm
+                    { d: "M80 160 L80 190", stroke: true }, // L Leg
+                    { d: "M120 160 L120 190", stroke: true }, // R Leg
+                    { d: "M85 50 L95 50 L95 60 L85 60 Z", fill: "#4ECDC4" }, // Eye L
+                    { d: "M105 50 L115 50 L115 60 L105 60 Z", fill: "#4ECDC4" }, // Eye R
+                    { d: "M90 70 L110 70", stroke: true }, // Mouth
+                    { d: "M100 30 L100 10 A5 5 0 0 1 100 20", stroke: true } // Antenna
+                ]
+            },
+            // 3. Cat
+            {
+                name: "Cat",
+                viewBox: "0 0 200 200",
+                paths: [
+                    { d: "M70 110 Q50 150 70 190 L130 190 Q150 150 130 110 Z", fill: "#eee" }, // Body
+                    { d: "M60 100 L60 40 L90 60 L110 60 L140 40 L140 100 Q100 120 60 100", fill: "#eee" }, // Head & Ears
+                    { d: "M70 130 L50 150", stroke: true }, // Arm L
+                    { d: "M130 130 L150 150", stroke: true }, // Arm R
+                    { d: "M80 190 L80 195", stroke: true }, // Leg
+                    { d: "M120 190 L120 195", stroke: true }, // Leg
+                    { d: "M80 75 A5 5 0 0 1 85 75", fill: "#333" }, // Eye
+                    { d: "M115 75 A5 5 0 0 1 120 75", fill: "#333" }, // Eye
+                    { d: "M95 90 L100 95 L105 90", stroke: true }, // Nose
+                    { d: "M130 150 Q160 120 160 170", stroke: true } // Tail
+                ]
+            }
+        ];
+
+        function getCharacterForLevel(level) {
+            const template = CHARACTERS[(level - 1) % CHARACTERS.length];
+            return JSON.parse(JSON.stringify(template));
+        }
+
+        // RANDOM WORD LOGIC FIX
+        function getWordForLevel(level) {
+            let list;
+            if(level <= 5) list = WORDS.easy;
+            else if(level <= 10) list = WORDS.medium;
+            else list = WORDS.hard;
+            // Return random word from list
+            return list[Math.floor(Math.random() * list.length)]; 
+        }
+
+        // --- AUDIO ENGINE ---
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx;
+
+        function initAudio() {
+            if (!audioCtx) audioCtx = new AudioContext();
+        }
+
+        function playTone(freq, type, duration) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        function playSound(name) {
+            initAudio();
+            if (name === 'click') playTone(400, 'sine', 0.1);
+            if (name === 'correct') { 
+                playTone(600, 'sine', 0.1); 
+                setTimeout(() => playTone(800, 'sine', 0.2), 100); 
+            }
+            if (name === 'wrong') playTone(150, 'sawtooth', 0.3);
+            if (name === 'win') {
+                [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => playTone(f, 'square', 0.2), i * 100));
+            }
+            if (name === 'paint') playTone(500 + Math.random()*200, 'sine', 0.1);
+        }
+
+        // --- APP LOGIC ---
+        const app = {
+            currentLevel: 1,
+            progress: {}, // { levelId: stars }
+            currentWord: "",
+            guessedLetters: new Set(),
+            mistakes: 0,
+            maxMistakes: 10,
+            currentColor: COLORS[0],
+            
+            init() {
+                const saved = localStorage.getItem('wcw_progress');
+                if (saved) this.progress = JSON.parse(saved);
+                this.renderLevelGrid();
+            },
+
+            showScreen(id) {
+                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+                document.getElementById('screen-' + id).classList.add('active');
+                playSound('click');
+            },
+
+            resetProgress() {
+                if(confirm("Are you sure? This will delete all your stars and restart the game!")) {
+                    localStorage.removeItem('wcw_progress');
+                    this.progress = {};
+                    this.renderLevelGrid();
+                    // Optional: refresh page to ensure clean state or just re-render
+                    this.showScreen('home');
+                }
+            },
+
+            renderLevelGrid() {
+                const container = document.getElementById('level-container');
+                container.innerHTML = '';
+                
+                for (let i = 1; i <= 15; i++) {
+                    const stars = this.progress[i] || 0;
+                    const unlocked = i === 1 || (this.progress[i-1] && this.progress[i-1] > 0);
+                    
+                    const btn = document.createElement('div');
+                    btn.className = `level-btn ${unlocked ? 'unlocked' : 'locked'}`;
+                    
+                    let starStr = '';
+                    for(let s=0; s<3; s++) starStr += s < stars ? '⭐' : '☆';
+                    
+                    btn.innerHTML = `<span>${i}</span><div class="level-stars">${unlocked ? starStr : '🔒'}</div>`;
+                    
+                    if(unlocked) {
+                        btn.onclick = () => this.startLevel(i);
+                    }
+                    container.appendChild(btn);
+                }
+            },
+
+            startLevel(lvl) {
+                this.currentLevel = lvl;
+                this.currentWord = getWordForLevel(lvl); // Random word
+                this.guessedLetters.clear();
+                this.mistakes = 0;
+                
+                this.renderWord();
+                this.renderKeyboard();
+                this.renderHealth();
+                this.renderHangman(true);
+                
+                document.getElementById('game-result-modal').classList.remove('active');
+                this.showScreen('game');
+            },
+
+            renderWord() {
+                const display = document.getElementById('word-display');
+                display.innerHTML = '';
+                [...this.currentWord].forEach(char => {
+                    const slot = document.createElement('div');
+                    slot.className = 'letter-slot';
+                    if (this.guessedLetters.has(char)) {
+                        slot.textContent = char;
+                        slot.classList.add('filled');
+                    }
+                    display.appendChild(slot);
+                });
+            },
+
+            renderKeyboard() {
+                const kbd = document.getElementById('keyboard');
+                kbd.innerHTML = '';
+                const alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+                [...alpha].forEach(char => {
+                    const btn = document.createElement('div');
+                    btn.className = 'key';
+                    btn.textContent = char;
+                    
+                    if (this.guessedLetters.has(char)) {
+                        btn.classList.add(this.currentWord.includes(char) ? 'correct' : 'wrong');
+                        btn.style.pointerEvents = 'none';
+                    } else {
+                        btn.onclick = () => this.guess(char);
+                    }
+                    kbd.appendChild(btn);
+                });
+            },
+
+            renderHealth() {
+                const bar = document.getElementById('health-bar');
+                bar.innerHTML = '';
+                const lives = this.maxMistakes - this.mistakes;
+                for(let i=0; i<this.maxMistakes; i++) {
+                    const heart = document.createElement('span');
+                    heart.className = `heart ${i < lives ? '' : 'lost'}`;
+                    heart.textContent = '❤';
+                    bar.appendChild(heart);
+                }
+            },
+
+            renderHangman(reset = false) {
+                const svg = document.getElementById('game-character-svg');
+                
+                if (reset) {
+                    svg.innerHTML = '';
+                    const charData = getCharacterForLevel(this.currentLevel);
+                    charData.paths.forEach((p, index) => {
+                        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                        path.setAttribute("d", p.d);
+                        path.setAttribute("class", "char-path");
+                        path.setAttribute("id", `char-part-${index}`);
+                        path.style.fill = "none";
+                        path.style.stroke = "#333";
+                        svg.appendChild(path);
+                    });
+                    return;
+                }
+
+                if (this.mistakes > 0) {
+                    const partId = this.mistakes - 1;
+                    const el = document.getElementById(`char-part-${partId}`);
+                    if (el) el.classList.add('revealed');
+                }
+            },
+
+            guess(char) {
+                if (this.guessedLetters.has(char)) return;
+                this.guessedLetters.add(char);
+
+                if (this.currentWord.includes(char)) {
+                    playSound('correct');
+                    this.renderWord();
+                    this.renderKeyboard();
+                    this.checkWin();
+                } else {
+                    playSound('wrong');
+                    this.mistakes++;
+                    this.renderHealth();
+                    this.renderHangman();
+                    this.renderKeyboard();
+                    if (this.mistakes >= this.maxMistakes) {
+                        this.gameOver(false);
+                    }
+                }
+            },
+
+            checkWin() {
+                const won = [...this.currentWord].every(c => this.guessedLetters.has(c));
+                if (won) this.gameOver(true);
+            },
+
+            gameOver(win) {
+                const modal = document.getElementById('game-result-modal');
+                const title = document.getElementById('result-title');
+                const msg = document.getElementById('result-message');
+                const starsDiv = document.getElementById('star-result');
+                const btnColour = document.getElementById('btn-colour-reward');
+
+                modal.classList.add('active');
+                
+                if (win) {
+                    playSound('win');
+                    title.textContent = "Awesome! 🎉";
+                    
+                    let stars = 0;
+                    if (this.mistakes <= 2) stars = 3;
+                    else if (this.mistakes <= 5) stars = 2;
+                    else stars = 1;
+
+                    const oldStars = this.progress[this.currentLevel] || 0;
+                    if (stars > oldStars) {
+                        this.progress[this.currentLevel] = stars;
+                        localStorage.setItem('wcw_progress', JSON.stringify(this.progress));
+                        this.renderLevelGrid();
+                    }
+
+                    starsDiv.innerHTML = '';
+                    for(let i=0; i<3; i++) {
+                        const s = document.createElement('span');
+                        s.className = 'star-anim';
+                        s.textContent = i < stars ? '⭐' : '☆';
+                        if (i < stars) {
+                            s.style.animationDelay = (i * 0.2) + "s";
+                            s.classList.add('awarded');
+                        }
+                        starsDiv.appendChild(s);
+                    }
+                    
+                    msg.textContent = "You unlocked the picture!";
+                    btnColour.style.display = "inline-block";
+
+                } else {
+                    title.textContent = "Oh no! 😢";
+                    starsDiv.innerHTML = "";
+                    msg.textContent = `The word was ${this.currentWord}. Try again!`;
+                    btnColour.style.display = "none";
+                }
+            },
+
+            confirmExit() {
+                if(confirm("Exit level? Progress will be lost.")) {
+                    this.showScreen('level-select');
+                }
+            },
+
+            startColouring() {
+                this.showScreen('colouring');
+                this.initColouringBoard();
+            },
+
+            initColouringBoard() {
+                const pContainer = document.getElementById('color-palette');
+                pContainer.innerHTML = '';
+                COLORS.forEach((c, i) => {
+                    const swatch = document.createElement('div');
+                    swatch.className = 'color-swatch';
+                    swatch.style.backgroundColor = c;
+                    if(i===0) { 
+                        swatch.classList.add('active'); 
+                        this.currentColor = c;
+                    }
+                    swatch.onclick = () => {
+                        document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+                        swatch.classList.add('active');
+                        this.currentColor = c;
+                        playSound('click');
+                    };
+                    pContainer.appendChild(swatch);
+                });
+
+                const svg = document.getElementById('colouring-svg');
+                svg.innerHTML = '';
+                
+                const charData = getCharacterForLevel(this.currentLevel);
+                
+                charData.paths.forEach((p) => {
+                    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                    path.setAttribute("d", p.d);
+                    
+                    // Logic to separate strokes from fills
+                    if (p.stroke) {
+                        // It's an arm, leg, or line detail - do not fill
+                        path.style.fill = "none";
+                        path.classList.add('char-stroke-only');
+                        path.style.pointerEvents = "none"; // Non-interactive
+                    } else {
+                        // It's a closed shape - allow fill
+                        path.style.fill = "#ffffff";
+                        path.classList.add('char-fillable');
+                        path.style.cursor = "pointer";
+                        path.onclick = function() {
+                            this.style.fill = app.currentColor;
+                            playSound('paint');
+                            this.style.transform = "scale(1.02)";
+                            this.style.transformOrigin = "center";
+                            setTimeout(() => {
+                                this.style.transform = "scale(1)";
+                            }, 100);
+                        };
+                    }
+                    
+                    path.style.stroke = "#333";
+                    path.style.strokeWidth = "3";
+                    path.style.strokeLinecap = "round";
+                    path.style.strokeLinejoin = "round";
+
+                    svg.appendChild(path);
+                });
+            },
+
+            finishColouring() {
+                playSound('win');
+                // Copy current colouring state to celebration screen
+                const celebContainer = document.getElementById('final-image-container');
+                const currentSvg = document.getElementById('colouring-svg');
+                celebContainer.innerHTML = '';
+                celebContainer.appendChild(currentSvg.cloneNode(true));
+                
+                // Show stars again
+                const celebStars = document.getElementById('celeb-stars');
+                celebStars.innerHTML = document.getElementById('star-result').innerHTML;
+
+                this.showScreen('celebration');
+            },
+
+            nextLevel() {
+                if(this.currentLevel < 15) {
+                    this.startLevel(this.currentLevel + 1);
+                } else {
+                    alert("You beat the whole game! Amazing! 🎉");
+                    this.showScreen('level-select');
+                }
+            },
+
+            saveImage() {
+                const svgElement = document.querySelector('#final-image-container svg');
+                const charName = getCharacterForLevel(this.currentLevel).name;
+                
+                // Serialize SVG
+                const serializer = new XMLSerializer();
+                const svgString = serializer.serializeToString(svgElement);
+                const blob = new Blob([svgString], {type: 'image/svg+xml;charset=utf-8'});
+                const url = URL.createObjectURL(blob);
+                
+                // Draw to canvas
+                const canvas = document.createElement('canvas');
+                canvas.width = 400;
+                canvas.height = 400;
+                const ctx = canvas.getContext('2d');
+                const img = new Image();
+                
+                img.onload = function() {
+                    ctx.fillStyle = 'white';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0, 400, 400);
+                    URL.revokeObjectURL(url);
+                    
+                    const link = document.createElement('a');
+                    link.download = `my-${charName.toLowerCase()}-art.png`;
+                    link.href = canvas.toDataURL("image/png");
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                };
+                img.src = url;
+            }
+        };
+
+        window.onload = () => app.init();
+
+    </script>
+</body>
+</html>
